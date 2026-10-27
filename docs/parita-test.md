@@ -15,7 +15,7 @@ comportamento per l'utente. Stato: ✅ portato e verde · ⏳ fase successiva ·
 | test_save_session_reuses_account_without_iban | `save session reuses account without iban` | ✅ |
 | test_consent_valid_until_uses_bank_maximum | `consent valid until uses bank maximum` | ✅ |
 | test_consent_error_detection | `consent error detection` | ✅ |
-| test_db_is_encrypted | `integration_test/db_encryption_test.dart` (SQLCipher sul telefono) | ⏳ fase 2 |
+| test_db_is_encrypted | `integration_test/db_encryption_test.dart` (SQLCipher sul telefono: senza chiave e con chiave errata illeggibile, testo assente dal file) | ✅ scritto, da eseguire sul telefono |
 | test_is_due_respects_interval | `is_due respects interval` | ✅ |
 | test_same_iban_different_currencies_are_separate_accounts | `same iban different currencies are separate accounts` | ✅ |
 | test_migration_adds_hidden_column | `migration adds hidden column` | ✅ |
@@ -52,14 +52,14 @@ comportamento per l'utente. Stato: ✅ portato e verde · ⏳ fase successiva ·
 ## tests/test_web.py → test/ui/*, test/bank/*, integration_test/*
 | Web | App | Stato |
 |---|---|---|
-| test_requires_login_and_security_headers | sblocco richiesto all'avvio | ⏳ fase 2 |
+| test_requires_login_and_security_headers | `security_test: bloccata: solo la schermata di sblocco` (+ FLAG_SECURE in MainActivity) | ✅ |
 | test_foreign_host_rejected | ➖ nessun server: niente header Host. Equivalente: nessuna porta aperta, verificato nell'audit | ⏳ fase 8 |
 | test_post_without_csrf_rejected | ➖ nessun form web. Equivalente: deep link accettato solo con `state` valido | ⏳ fase 3 |
-| test_login_flow_and_pages | sblocco → tutte le schermate si aprono | ⏳ fase 2 |
-| test_wrong_password | sblocco fallito → app resta bloccata | ⏳ fase 2 |
-| test_logout_invalidates_copied_cookie | blocco dopo 30 min di inattività | ⏳ fase 2 |
+| test_login_flow_and_pages | `security_test: bloccata… → sblocco → barra con le 5 voci`, `Altro → Impostazioni` | ✅ (pagine complete nelle fasi 3-6) |
+| test_wrong_password | `AppLock: si sblocca solo con autenticazione riuscita`, `senza blocco schermo resta bloccata` | ✅ |
+| test_logout_invalidates_copied_cookie | `si blocca dopo 30 minuti di inattività`, `blocco per inattività nasconde subito i dati` | ✅ |
 | test_change_password | ➖ niente password (sblocco biometrico/PIN, scelta di progetto) | ➖ |
-| test_auth_pages_have_no_sidebar | schermata di sblocco senza navigazione | ⏳ fase 2 |
+| test_auth_pages_have_no_sidebar | `bloccata: … nessuna NavigationBar` | ✅ |
 | test_callback_with_unknown_state_is_refused | deep link con `state` sconosciuto rifiutato | ⏳ fase 3 |
 | test_manual_category_creates_rule | cambio categoria dal dettaglio con regola | ⏳ fase 4 |
 | test_connect_shows_bank_page_instead_of_redirect | collega → apre la Custom Tab della banca | ⏳ fase 3 |
@@ -75,7 +75,7 @@ comportamento per l'utente. Stato: ✅ portato e verde · ⏳ fase successiva ·
 | test_delete_bank_requires_exact_name | elimina solo scrivendo il nome esatto | ⏳ fase 3 |
 | test_hidden_account_excluded_from_totals_and_list | conto nascosto escluso da totali ed elenco | ⏳ fase 4 |
 | test_home_feed_and_detail_panel | Home: feed e dettaglio | ⏳ fase 4 |
-| test_detail_requires_login | dettaglio inaccessibile con app bloccata | ⏳ fase 2 |
+| test_detail_requires_login | `bloccata: nessuna pagina con dati costruita` (vale per ogni schermata, dettaglio incluso) | ✅ |
 | test_category_change_from_home_returns_home | cambio categoria dalla Home resta in Home | ⏳ fase 4 |
 | test_analysis_page_periods | Analisi: tutti i periodi | ⏳ fase 5 |
 | test_flows_page | Flussi | ⏳ fase 5 |
@@ -84,3 +84,9 @@ comportamento per l'utente. Stato: ✅ portato e verde · ⏳ fase successiva ·
 | test_transactions_periods_and_grouping | Movimenti: periodi e raggruppamento | ⏳ fase 4 |
 | test_accounts_page_states | Conti: stati dei consensi | ⏳ fase 3 |
 | test_manual_transfer_and_visibility | giroconto manuale e visibilità | ⏳ fase 4 |
+
+## Solo mobile (sicurezza)
+| Controllo | Test | Stato |
+|---|---|---|
+| Chiave DB 256 bit, creata una volta, formato verificato | `security_test: chiave del database` | ✅ |
+| Credenziali Enable Banking validate e salvate solo nel Keystore, mai nel DB | `security_test: credenziali validate…`, `Altro → Impostazioni…` | ✅ |

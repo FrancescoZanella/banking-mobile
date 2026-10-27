@@ -7,8 +7,9 @@ plugins {
 
 android {
     namespace = "com.francescozanella.bankingmobile"
-    compileSdk = flutter.compileSdkVersion
-    ndkVersion = flutter.ndkVersion
+    // Richiesti dai plugin (flutter_secure_storage, sqflite_sqlcipher, local_auth, …).
+    compileSdk = 36
+    ndkVersion = "27.0.12077973"
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
@@ -24,7 +25,8 @@ android {
         applicationId = "com.francescozanella.bankingmobile"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
-        minSdk = flutter.minSdkVersion
+        // Android 9+: BiometricPrompt e Keystore moderno.
+        minSdk = 28
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
