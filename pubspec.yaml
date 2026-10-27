@@ -44,6 +44,10 @@ dependencies:
   local_auth: ^2.3.0
   file_picker: ^11.0.3
   path: ^1.9.1
+  app_links: ^6.4.1
+  url_launcher: ^6.3.2
+  workmanager: ^0.9.2
+  flutter_local_notifications: ^20.1.0
 
 dev_dependencies:
   flutter_test:
@@ -103,3 +107,9 @@ flutter:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
+
+# workmanager: con Flutter 3.32 l'ultima combinazione coerente è interfaccia 0.9.3
+# (android 0.9.3 richiede la 0.9.4, che apple 0.9.4 non implementa ancora).
+dependency_overrides:
+  workmanager_platform_interface: 0.9.3
+  workmanager_android: 0.9.2

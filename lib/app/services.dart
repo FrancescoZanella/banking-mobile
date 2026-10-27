@@ -1,22 +1,36 @@
 import 'package:flutter/widgets.dart';
 import 'package:sqflite_common/sqlite_api.dart';
 
+import '../bank/bank_service.dart';
 import '../bank/enable_banking.dart';
 import '../data/secure_store.dart';
 
-/// Pagina .pem scelta dall'utente: nome del file e contenuto.
+/// File .pem scelto dall'utente: nome del file e contenuto.
 typedef PickedFile = ({String name, String content});
 
 /// Dipendenze dell'app, iniettabili nei test.
 class AppServices {
-  AppServices({required this.db, required this.secrets, required this.api, required this.pickPem});
+  AppServices({
+    required this.db,
+    required this.secrets,
+    required this.api,
+    required this.pickPem,
+    required this.openBankPage,
+  })  : sync = SyncRunner(db, api) {
+    bank = BankService(db, api, sync);
+  }
 
   final Database db;
   final SecretStore secrets;
-  final EnableBankingClient api;
+  final EnableBankingApi api;
+  final SyncRunner sync;
+  late final BankService bank;
 
   /// Selettore del file .pem (selettore di sistema sul telefono).
   final Future<PickedFile?> Function() pickPem;
+
+  /// Apre la pagina di login della banca (scheda sicura del browser).
+  final Future<bool> Function(Uri url) openBankPage;
 }
 
 class Services extends InheritedWidget {

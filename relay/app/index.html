@@ -1,0 +1,16 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="referrer" content="no-referrer">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-5yOrGuMtLCOgtPzRdyaGZ+vrqRHlw0tebVTJ6mFlXB8='; style-src 'unsafe-inline'">
+  <title>Ritorno all'app</title>
+</head>
+<body style="font-family:system-ui,sans-serif;background:#000;color:#fff;max-width:480px;margin:60px auto;padding:0 20px">
+  <p>Ritorno all'app Banking Dashboard…</p>
+  <p><a id="back" href="bankingmobile://callback" style="display:inline-block;padding:14px 22px;border-radius:999px;background:#7c83ff;color:#fff;text-decoration:none;font-weight:600">Torna all'app</a></p>
+  <p style="color:#8e8e96;font-size:14px">Se non succede nulla, tocca il pulsante.</p>
+<script>var q=location.search,a=document.getElementById("back");a.href="intent://callback"+q+"#Intent;scheme=bankingmobile;package=com.francescozanella.bankingmobile;end";location.replace(a.href);</script>
+</body>
+</html>

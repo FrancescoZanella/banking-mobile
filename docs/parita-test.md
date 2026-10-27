@@ -54,25 +54,25 @@ comportamento per l'utente. Stato: ✅ portato e verde · ⏳ fase successiva ·
 |---|---|---|
 | test_requires_login_and_security_headers | `security_test: bloccata: solo la schermata di sblocco` (+ FLAG_SECURE in MainActivity) | ✅ |
 | test_foreign_host_rejected | ➖ nessun server: niente header Host. Equivalente: nessuna porta aperta, verificato nell'audit | ⏳ fase 8 |
-| test_post_without_csrf_rejected | ➖ nessun form web. Equivalente: deep link accettato solo con `state` valido | ⏳ fase 3 |
+| test_post_without_csrf_rejected | ➖ nessun form web. Equivalente: deep link accettato solo con `state` valido, monouso, schema `bankingmobile://callback` (`bank_test: ritorno con state sconosciuto…`) | ✅ |
 | test_login_flow_and_pages | `security_test: bloccata… → sblocco → barra con le 5 voci`, `Altro → Impostazioni` | ✅ (pagine complete nelle fasi 3-6) |
 | test_wrong_password | `AppLock: si sblocca solo con autenticazione riuscita`, `senza blocco schermo resta bloccata` | ✅ |
 | test_logout_invalidates_copied_cookie | `si blocca dopo 30 minuti di inattività`, `blocco per inattività nasconde subito i dati` | ✅ |
 | test_change_password | ➖ niente password (sblocco biometrico/PIN, scelta di progetto) | ➖ |
 | test_auth_pages_have_no_sidebar | `bloccata: … nessuna NavigationBar` | ✅ |
-| test_callback_with_unknown_state_is_refused | deep link con `state` sconosciuto rifiutato | ⏳ fase 3 |
+| test_callback_with_unknown_state_is_refused | `bank_test: ritorno con state sconosciuto, già usato o con schema estraneo` + `deep link di ritorno: esito mostrato` | ✅ |
 | test_manual_category_creates_rule | cambio categoria dal dettaglio con regola | ⏳ fase 4 |
-| test_connect_shows_bank_page_instead_of_redirect | collega → apre la Custom Tab della banca | ⏳ fase 3 |
-| test_accounts_page_lists_catalog_in_dropdown | Conti: catalogo nel menu | ⏳ fase 3 |
-| test_accounts_page_survives_catalog_error | Conti: errore catalogo mostrato, pagina utilizzabile | ⏳ fase 3 |
-| test_new_bank_not_in_catalog_is_refused | banca fuori catalogo rifiutata | ⏳ fase 3 |
-| test_new_bank_saved_only_after_successful_login | banca salvata solo a login riuscito | ⏳ fase 3 |
-| test_new_bank_failed_login_leaves_nothing | login fallito non lascia nulla | ⏳ fase 3 |
-| test_new_bank_existing_reuses_key | banca già nota riusa la sua chiave | ⏳ fase 3 |
-| test_new_bank_without_accounts_explains_control_panel | nessun conto → messaggio sul Control Panel | ⏳ fase 3 |
-| test_renewal_without_accounts_keeps_existing_link | rinnovo a vuoto non sgancia i conti | ⏳ fase 3 |
-| test_disconnect_revokes_and_keeps_history | scollega: revoca e tiene lo storico | ⏳ fase 3 |
-| test_delete_bank_requires_exact_name | elimina solo scrivendo il nome esatto | ⏳ fase 3 |
+| test_connect_shows_bank_page_instead_of_redirect | `bank_test: banca nuova salvata solo dopo il login` (restituisce l'URL https della banca, aperto in Custom Tab) | ✅ |
+| test_accounts_page_lists_catalog_in_dropdown | `bank_test: catalogo nel menu, in ordine` | ✅ |
+| test_accounts_page_survives_catalog_error | `bank_test: … errore del catalogo → null` (avviso «Elenco banche non disponibile») | ✅ |
+| test_new_bank_not_in_catalog_is_refused | `bank_test: banca fuori catalogo rifiutata (solo nome esatto)` | ✅ |
+| test_new_bank_saved_only_after_successful_login | `bank_test: banca nuova salvata solo dopo il login riuscito` | ✅ |
+| test_new_bank_failed_login_leaves_nothing | `bank_test: login fallito non lascia nulla` | ✅ |
+| test_new_bank_existing_reuses_key | `bank_test: banca già nota riusa la sua chiave` | ✅ |
+| test_new_bank_without_accounts_explains_control_panel | `bank_test: nessun conto restituito → spiega il Control Panel` | ✅ |
+| test_renewal_without_accounts_keeps_existing_link | `bank_test: rinnovo a vuoto non sgancia i conti` | ✅ |
+| test_disconnect_revokes_and_keeps_history | `bank_test: scollega: revoca il consenso e tiene lo storico` | ✅ |
+| test_delete_bank_requires_exact_name | `bank_test: elimina solo scrivendo il nome esatto, e solo quella banca` | ✅ |
 | test_hidden_account_excluded_from_totals_and_list | conto nascosto escluso da totali ed elenco | ⏳ fase 4 |
 | test_home_feed_and_detail_panel | Home: feed e dettaglio | ⏳ fase 4 |
 | test_detail_requires_login | `bloccata: nessuna pagina con dati costruita` (vale per ogni schermata, dettaglio incluso) | ✅ |
@@ -82,7 +82,7 @@ comportamento per l'utente. Stato: ✅ portato e verde · ⏳ fase successiva ·
 | test_budget_page_and_forms | Budget: pagina e moduli | ⏳ fase 6 |
 | test_category_icons | Categorie: icone | ⏳ fase 6 |
 | test_transactions_periods_and_grouping | Movimenti: periodi e raggruppamento | ⏳ fase 4 |
-| test_accounts_page_states | Conti: stati dei consensi | ⏳ fase 3 |
+| test_accounts_page_states | `bank_test: pagina Conti: stati dei consensi, conto nascosto, azioni` | ✅ |
 | test_manual_transfer_and_visibility | giroconto manuale e visibilità | ⏳ fase 4 |
 
 ## Solo mobile (sicurezza)
@@ -90,3 +90,5 @@ comportamento per l'utente. Stato: ✅ portato e verde · ⏳ fase successiva ·
 |---|---|---|
 | Chiave DB 256 bit, creata una volta, formato verificato | `security_test: chiave del database` | ✅ |
 | Credenziali Enable Banking validate e salvate solo nel Keystore, mai nel DB | `security_test: credenziali validate…`, `Altro → Impostazioni…` | ✅ |
+| Rinomina (max 40, vuoto = nome banca) e nascondi | `bank_test: rinomina … e nascondi` | ✅ |
+| Notifica consensi: solo nomi e giorni, mai importi | `bank_test: notifica dei consensi` | ✅ |

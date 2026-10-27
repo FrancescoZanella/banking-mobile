@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'accounts_screen.dart';
 import 'settings_screen.dart';
 import 'theme.dart';
 
@@ -64,7 +65,7 @@ class MorePage extends StatelessWidget {
           child: Column(children: [
             item(Icons.swap_horiz, 'Flussi', const Scaffold(body: SafeArea(child: ComingSoon(title: 'Entrate e flusso di cassa', phase: 5)))),
             item(Icons.category_outlined, 'Categorie', const Scaffold(body: SafeArea(child: ComingSoon(title: 'Categorie', phase: 6)))),
-            item(Icons.account_balance_outlined, 'Conti', const Scaffold(body: SafeArea(child: ComingSoon(title: 'Conti', phase: 3)))),
+            item(Icons.account_balance_outlined, 'Conti', const AccountsScreen()),
             item(Icons.settings_outlined, 'Impostazioni', const SettingsScreen()),
           ]),
         ),

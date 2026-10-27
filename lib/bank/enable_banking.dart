@@ -44,9 +44,22 @@ class Credentials {
   final String privateKeyPem;
 }
 
+/// Operazioni dell'API usate dall'app (nei test una banca finta le simula).
+abstract class EnableBankingApi {
+  Future<Map<String, dynamic>> checkApplication();
+  Future<List<Map<String, dynamic>>> listAspsps(String country);
+  Future<Map<String, dynamic>?> getAspsp(String name, String country);
+  Future<String> startAuth(Map<String, dynamic> aspsp, String state);
+  Future<Map<String, dynamic>> createSession(String code);
+  Future<void> deleteSession(String sessionId);
+  Future<List<Map<String, dynamic>>> getBalances(String uid);
+  Future<List<Map<String, dynamic>>> getTransactions(String uid, String dateFrom,
+      {String? dateTo, String strategy});
+}
+
 /// Client dell'API Enable Banking. `http.Client` e orologio sono iniettabili
 /// per i test; in produzione si usa sempre HTTPS verso `apiBaseUrl`.
-class EnableBankingClient {
+class EnableBankingClient implements EnableBankingApi {
   EnableBankingClient(this._credentials, {http.Client? client, DateTime Function()? clock})
       : _http = client ?? http.Client(),
         _clock = clock ?? DateTime.now;
@@ -108,6 +121,7 @@ class EnableBankingClient {
     return data;
   }
 
+  @override
   Future<Map<String, dynamic>> checkApplication() async {
     final data = await _callJson('Verifica applicazione fallita', 'GET', '/application');
     if ('${data['environment'] ?? ''}'.toUpperCase() != 'PRODUCTION') {
@@ -117,6 +131,7 @@ class EnableBankingClient {
   }
 
   /// Catalogo delle banche di un paese, in cache per 24 ore.
+  @override
   Future<List<Map<String, dynamic>>> listAspsps(String country) async {
     final cached = _catalog[country];
     if (cached != null && cached.$1.isAfter(_clock())) return cached.$2;
@@ -131,6 +146,7 @@ class EnableBankingClient {
   }
 
   /// La banca con esattamente questo nome nel catalogo, oppure null.
+  @override
   Future<Map<String, dynamic>?> getAspsp(String name, String country) async {
     for (final item in await listAspsps(country)) {
       if (item['name'] == name) return item;
@@ -138,6 +154,7 @@ class EnableBankingClient {
     return null;
   }
 
+  @override
   Future<String> startAuth(Map<String, dynamic> aspsp, String state) async {
     final data = await _callJson('Avvio autorizzazione fallito', 'POST', '/auth', json: {
       'access': {
@@ -156,10 +173,12 @@ class EnableBankingClient {
     return url;
   }
 
+  @override
   Future<Map<String, dynamic>> createSession(String code) =>
       _callJson('Creazione sessione fallita', 'POST', '/sessions', json: {'code': code});
 
   /// Revoca il consenso presso Enable Banking (e quindi presso la banca).
+  @override
   Future<void> deleteSession(String sessionId) async {
     final r = await _call('DELETE', '/sessions/$sessionId');
     // 404/401: sessione già scaduta o revocata, il risultato è lo stesso.
@@ -168,11 +187,13 @@ class EnableBankingClient {
     }
   }
 
+  @override
   Future<List<Map<String, dynamic>>> getBalances(String uid) async {
     final data = await _callJson('Lettura saldi fallita', 'GET', '/accounts/$uid/balances');
     return [for (final b in (data['balances'] as List? ?? [])) Map<String, dynamic>.from(b as Map)];
   }
 
+  @override
   Future<List<Map<String, dynamic>>> getTransactions(String uid, String dateFrom,
       {String? dateTo, String strategy = 'default'}) async {
     final transactions = <Map<String, dynamic>>[];

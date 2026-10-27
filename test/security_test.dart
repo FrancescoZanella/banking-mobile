@@ -95,6 +95,7 @@ void main() {
         secrets: secrets,
         api: EnableBankingClient(() => readCredentials(secrets)),
         pickPem: () async => (name: 'app.pem', content: testPem),
+        openBankPage: (url) async => true,
       );
     });
     tearDown(() => db.close());

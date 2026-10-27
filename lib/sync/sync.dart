@@ -139,7 +139,7 @@ class SyncResult {
   String? error;
 }
 
-Future<SyncResult> syncAccount(Database db, EnableBankingClient api, Map<String, Object?> account,
+Future<SyncResult> syncAccount(Database db, EnableBankingApi api, Map<String, Object?> account,
     {bool backfill = false, DateTime? now}) async {
   final accountId = account['id'] as int;
   final consents = await db.query('consents', where: 'id = ?', whereArgs: [account['consent_id']]);
@@ -198,7 +198,7 @@ Future<SyncResult> syncAccount(Database db, EnableBankingClient api, Map<String,
   return result;
 }
 
-Future<List<SyncResult>> syncAll(Database db, EnableBankingClient api,
+Future<List<SyncResult>> syncAll(Database db, EnableBankingApi api,
     {bool onlyDue = true, Set<int>? accountIds, bool backfill = false, DateTime? now}) async {
   final accounts = await db.query('accounts', where: 'uid IS NOT NULL');
   final results = <SyncResult>[];
