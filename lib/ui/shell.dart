@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
 
 import 'accounts_screen.dart';
+import 'analysis_screen.dart';
+import 'flows_screen.dart';
 import 'home_screen.dart';
 import 'settings_screen.dart';
 import 'theme.dart';
 import 'transactions_screen.dart';
 
 /// Struttura dell'app: barra in basso con 5 voci (Home, Analisi, Movimenti,
-/// Budget, Altro). Analisi e Budget arrivano nelle fasi successive.
+/// Budget, Altro). Budget e Categorie arrivano nella fase 6.
 class Shell extends StatefulWidget {
   const Shell({super.key});
 
@@ -35,7 +37,7 @@ class _ShellState extends State<Shell> {
         onShowAccounts: () =>
             Navigator.of(context).push(MaterialPageRoute(builder: (_) => const AccountsScreen())),
       ),
-      const ComingSoon(title: 'Analisi spese', phase: 5),
+      const AnalysisScreen(),
       const TransactionsScreen(),
       const ComingSoon(title: 'Budget', phase: 6),
       const MorePage(),
@@ -70,7 +72,7 @@ class MorePage extends StatelessWidget {
         const SizedBox(height: 16),
         Card(
           child: Column(children: [
-            item(Icons.swap_horiz, 'Flussi', const Scaffold(body: SafeArea(child: ComingSoon(title: 'Entrate e flusso di cassa', phase: 5)))),
+            item(Icons.swap_horiz, 'Flussi', const FlowsScreen()),
             item(Icons.category_outlined, 'Categorie', const Scaffold(body: SafeArea(child: ComingSoon(title: 'Categorie', phase: 6)))),
             item(Icons.account_balance_outlined, 'Conti', const AccountsScreen()),
             item(Icons.settings_outlined, 'Impostazioni', const SettingsScreen()),

@@ -77,8 +77,8 @@ comportamento per l'utente. Stato: ✅ portato e verde · ⏳ fase successiva ·
 | test_home_feed_and_detail_panel | `transactions_test: Home: patrimonio, feed per giorno, dettaglio con lo storico` (i nomi sono testo, mai HTML: niente escape da verificare; id inesistente → «Movimento non trovato.») | ✅ |
 | test_detail_requires_login | `bloccata: nessuna pagina con dati costruita` (vale per ogni schermata, dettaglio incluso) | ✅ |
 | test_category_change_from_home_returns_home | `transactions_test: cambio categoria dal dettaglio: si resta in Home` | ✅ |
-| test_analysis_page_periods | Analisi: tutti i periodi | ⏳ fase 5 |
-| test_flows_page | Flussi | ⏳ fase 5 |
+| test_analysis_page_periods | `analysis_flows_test: Analisi: periodi, confronto allo stesso giorno, categoria → Movimenti filtrati` + `barre fino al mese del periodo…` (date non valide o future non esistono: il periodo si sceglie solo con i pulsanti) | ✅ |
+| test_flows_page | `analysis_flows_test: Flussi: solo mese e anno, totali, tasso di risparmio, entrate ricorrenti` | ✅ |
 | test_budget_page_and_forms | Budget: pagina e moduli | ⏳ fase 6 |
 | test_category_icons | Categorie: icone | ⏳ fase 6 |
 | test_transactions_periods_and_grouping | `transactions_test: periodi, raggruppamento…, CSV` + `Movimenti: chip attivi, «Azzera filtri», totali e gruppi per giorno` (CSV condiviso con Android) | ✅ |

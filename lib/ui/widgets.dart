@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../app/services.dart';
 import '../core/dates.dart';
 import '../core/money.dart';
+import '../core/periods.dart';
 import '../domain/reports.dart';
 import '../domain/transactions.dart';
 import 'theme.dart';
@@ -371,4 +372,108 @@ class _Badge extends StatelessWidget {
         decoration: BoxDecoration(color: AppColors.surface3, borderRadius: BorderRadius.circular(12)),
         child: Text(text, style: const TextStyle(fontSize: 12)),
       );
+}
+
+/// Avviso colorato in cima alle pagine (consensi, budget).
+class NoticeBanner extends StatelessWidget {
+  const NoticeBanner({super.key, required this.color, required this.icon, required this.text, this.action});
+  final Color color;
+  final IconData icon;
+  final String text;
+  final Widget? action;
+
+  @override
+  Widget build(BuildContext context) => Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.fromLTRB(14, 10, 6, 10),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: .12),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: color.withValues(alpha: .4)),
+        ),
+        child: Row(children: [
+          Icon(icon, color: color, size: 20),
+          const SizedBox(width: 10),
+          Expanded(child: Text(text, style: const TextStyle(fontSize: 13))),
+          ?action,
+        ]),
+      );
+}
+
+/// Consenso scaduto o in scadenza, con «Rinnova ora» (_alerts.html).
+class ConsentBanner extends StatelessWidget {
+  const ConsentBanner({super.key, required this.alert});
+  final ConsentAlert alert;
+
+  Future<void> _renew(BuildContext context) async {
+    final s = Services.of(context);
+    final messenger = ScaffoldMessenger.of(context);
+    final result = await s.bank.connectExisting(alert.key);
+    String? error = result.error;
+    if (error == null && !await s.openBankPage(Uri.parse(result.url!))) {
+      error = 'Impossibile aprire la pagina della banca.';
+    }
+    if (error != null) {
+      messenger.showSnackBar(SnackBar(content: Text(error), backgroundColor: const Color(0xFF5A2020)));
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final a = alert;
+    final text = a.expired
+        ? 'Il consenso di ${a.label} è scaduto: i dati restano, ma non arrivano nuovi movimenti.'
+        : 'Il consenso di ${a.label} ${daysLeft(a.days)}.';
+    return NoticeBanner(
+      color: a.expired ? AppColors.neg : AppColors.warn,
+      icon: Icons.warning_amber_rounded,
+      text: text,
+      action: TextButton(onPressed: () => _renew(context), child: const Text('Rinnova ora')),
+    );
+  }
+}
+
+/// Scelta del tipo di periodo e frecce avanti/indietro (_period_bar.html).
+/// Niente freccia verso il futuro oltre il periodo in corso.
+class PeriodBar extends StatelessWidget {
+  const PeriodBar({super.key, required this.period, required this.kinds, required this.onChanged, this.now});
+  final Period period;
+  final List<(PeriodKind, String)> kinds;
+  final ValueChanged<Period> onChanged;
+  final DateTime? now;
+
+  @override
+  Widget build(BuildContext context) {
+    final next = following(period);
+    final canGoOn = !next.start.isAfter(today(now));
+    return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+      SegmentedButton<PeriodKind>(
+        showSelectedIcon: false,
+        segments: [for (final (kind, label) in kinds) ButtonSegment(value: kind, label: Text(label))],
+        selected: {period.kind},
+        onSelectionChanged: (s) => onChanged(periodFor(s.first, period.start)),
+      ),
+      const SizedBox(height: 6),
+      Row(children: [
+        IconButton(
+          key: const Key('period-prev'),
+          tooltip: 'Periodo precedente',
+          icon: const Icon(Icons.chevron_left),
+          onPressed: () => onChanged(previous(period)),
+        ),
+        Expanded(
+          child: Text(period.label,
+              key: const Key('period-label'),
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16)),
+        ),
+        IconButton(
+          key: const Key('period-next'),
+          tooltip: 'Periodo successivo',
+          icon: const Icon(Icons.chevron_right),
+          onPressed: canGoOn ? () => onChanged(next) : null,
+        ),
+      ]),
+    ]);
+  }
 }

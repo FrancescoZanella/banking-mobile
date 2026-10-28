@@ -75,19 +75,6 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Future<void> _renew(String bankKey) async {
-    final s = Services.of(context);
-    final messenger = ScaffoldMessenger.of(context);
-    final result = await s.bank.connectExisting(bankKey);
-    String? error = result.error;
-    if (error == null && !await s.openBankPage(Uri.parse(result.url!))) {
-      error = 'Impossibile aprire la pagina della banca.';
-    }
-    if (error != null) {
-      messenger.showSnackBar(SnackBar(content: Text(error), backgroundColor: const Color(0xFF5A2020)));
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final syncing = Services.of(context).sync.running;
@@ -110,7 +97,7 @@ class _HomeScreenState extends State<HomeScreen> {
           child: ListView(
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
             children: [
-              for (final a in data.alerts) _ConsentBanner(alert: a, onRenew: () => _renew(a.key)),
+              for (final a in data.alerts) ConsentBanner(alert: a),
               for (final b in data.budgetAlerts) _BudgetBanner(alert: b),
               _hero(data, syncing),
               const SizedBox(height: 16),
@@ -315,26 +302,6 @@ class _AccountCard extends StatelessWidget {
   }
 }
 
-class _ConsentBanner extends StatelessWidget {
-  const _ConsentBanner({required this.alert, required this.onRenew});
-  final ConsentAlert alert;
-  final VoidCallback onRenew;
-
-  @override
-  Widget build(BuildContext context) {
-    final a = alert;
-    final text = a.expired
-        ? 'Il consenso di ${a.label} è scaduto: i dati restano, ma non arrivano nuovi movimenti.'
-        : 'Il consenso di ${a.label} ${daysLeft(a.days)}.';
-    return _Banner(
-      color: a.expired ? AppColors.neg : AppColors.warn,
-      icon: Icons.warning_amber_rounded,
-      text: text,
-      action: TextButton(onPressed: onRenew, child: const Text('Rinnova ora')),
-    );
-  }
-}
-
 class _BudgetBanner extends StatelessWidget {
   const _BudgetBanner({required this.alert});
   final budget.BudgetAlert alert;
@@ -346,31 +313,6 @@ class _BudgetBanner extends StatelessWidget {
     final text = over
         ? 'Budget ${alert.name}: superato di ${money(s.spent - s.limit)}'
         : 'Budget ${alert.name}: usato il ${s.pct.round()}% (${money(s.spent)} di ${money(s.limit)})';
-    return _Banner(color: over ? AppColors.neg : AppColors.warn, icon: Icons.track_changes, text: text);
+    return NoticeBanner(color: over ? AppColors.neg : AppColors.warn, icon: Icons.track_changes, text: text);
   }
-}
-
-class _Banner extends StatelessWidget {
-  const _Banner({required this.color, required this.icon, required this.text, this.action});
-  final Color color;
-  final IconData icon;
-  final String text;
-  final Widget? action;
-
-  @override
-  Widget build(BuildContext context) => Container(
-        margin: const EdgeInsets.only(bottom: 12),
-        padding: const EdgeInsets.fromLTRB(14, 10, 6, 10),
-        decoration: BoxDecoration(
-          color: color.withValues(alpha: .12),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: color.withValues(alpha: .4)),
-        ),
-        child: Row(children: [
-          Icon(icon, color: color, size: 20),
-          const SizedBox(width: 10),
-          Expanded(child: Text(text, style: const TextStyle(fontSize: 13))),
-          ?action,
-        ]),
-      );
 }
