@@ -28,6 +28,8 @@ flussi di cassa per categoria. È la versione per telefono della dashboard web
 - **Categorie e regole:** icone, colori, regole per testo o codice esercente (MCC).
 - **Giroconti** tra i tuoi conti riconosciuti dall'IBAN o dal tuo nome: fuori dai totali di tutti i conti,
   contati quando guardi un conto solo.
+- **Investimenti** (scelti a mano): tolti dalle uscite e sommati ai risparmiati; riquadro «Investiti» in Flussi e
+  «Investito da agosto» in Home.
 - **Dati dal 1 agosto 2026:** i movimenti precedenti non vengono scaricati né conservati.
 - **Notifiche dei movimenti da categorizzare:** per ogni movimento nuovo che le regole non riconoscono;
   il tocco apre il dettaglio per scegliere la categoria.

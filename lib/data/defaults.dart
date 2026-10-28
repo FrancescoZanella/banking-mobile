@@ -37,8 +37,16 @@ const iconChoices = [
   'shopping-bag', 'shirt', 'gift', 'heart-plus', 'pill', 'stethoscope', 'barbell',
   'school', 'book', 'paw', 'baby-carriage', 'users', 'tool', 'credit-card',
   'building-bank', 'cash', 'coin', 'pig-money', 'briefcase', 'receipt',
-  'arrows-exchange', 'tag',
+  'arrows-exchange', 'chart-line', 'tag',
 ];
+
+/// Categoria degli investimenti (es. acquisti di titoli): soldi spostati sul
+/// conto titoli, quindi risparmio e non spesa. Si assegna solo a mano.
+const investmentCategory = DefaultCategory('Investimenti', 'expense', '#4361ee', 'chart-line');
+
+/// Regola creata dalla prima versione degli Investimenti e poi tolta: l'utente
+/// sceglie a mano quali movimenti sono investimenti.
+const removedInvestmentRule = 'compravendita titoli';
 
 /// Le regole predefinite si aggiungono una volta per versione: quelle che hai
 /// eliminato a mano non ricompaiono.

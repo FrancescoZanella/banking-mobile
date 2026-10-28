@@ -14,6 +14,15 @@ come uscite; filtrando un solo conto in Movimenti contano, perché per quel cont
 usciti o entrati. Restano visibili nell'elenco con l'etichetta «Giroconto» e in Flussi nel riquadro
 «Spostato tra i tuoi conti».
 
+**Investimenti** (per esempio gli acquisti di titoli): si assegnano **a mano**, scegliendo la
+categoria *Investimenti* dal dettaglio del movimento; non c'è riconoscimento automatico. Sono
+**risparmio, non spesa**: restano nell'elenco dei Movimenti, ma **non rientrano in nessun conteggio di
+uscite o spese** (Home, Analisi, Flussi, totali di Movimenti, anche filtrando il conto titoli). Sono
+sommati ai risparmiati (le vendite riducono l'investito). In Flussi, in alto: *Risparmiati* e *Investiti*,
+sempre visibili anche a zero. In Home, sotto il patrimonio, la riga
+**«Investito da agosto»** ricorda i soldi passati al conto titoli, che il patrimonio non mostra perché
+il conto titoli non è leggibile tramite Enable Banking.
+
 ## Home
 
 - **Patrimonio totale** dei conti visibili e il saldo del mese (entrate meno uscite).

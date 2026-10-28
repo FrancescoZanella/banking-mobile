@@ -192,7 +192,9 @@ void main() {
   test('default categories have icons', () async {
     expect(await scalar(db, 'SELECT count(*) FROM categories WHERE icon IS NULL'), 0);
     expect(await scalar(db, "SELECT icon FROM categories WHERE name = 'Spesa alimentare'"), 'shopping-cart');
-    expect(defaultCategories.length, await scalar(db, 'SELECT count(*) FROM categories'));
+    // Le predefinite più «Investimenti», aggiunta dalla sua migrazione.
+    expect(defaultCategories.length + 1, await scalar(db, 'SELECT count(*) FROM categories'));
+    expect(await scalar(db, "SELECT icon FROM categories WHERE name = 'Investimenti'"), 'chart-line');
   });
 
   test('own party rule', () {

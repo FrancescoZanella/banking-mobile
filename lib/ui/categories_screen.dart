@@ -154,7 +154,7 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
                           child: CategoryAvatar(icon: c['icon'] as String?, color: c['color'] as String?),
                         ),
                         title: Text(c['name'] as String),
-                        subtitle: Text('${kinds[c['kind']]} · ${c['n']} movimenti',
+                        subtitle: Text('${c['investment'] == 1 ? 'investimento' : kinds[c['kind']]} · ${c['n']} movimenti',
                             style: const TextStyle(color: AppColors.muted, fontSize: 12)),
                         onTap: () => _pickIcon(c),
                         trailing: IconButton(

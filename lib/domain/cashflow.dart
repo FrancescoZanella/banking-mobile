@@ -129,7 +129,7 @@ Future<List<IncomeSource>> incomeSources(
     "count(*) AS n, max(t.booking_date || '|' || t.id) AS last_key, "
     "coalesce(c.icon, 'coin') AS icon, coalesce(c.color, '#80b918') AS color "
     'FROM transactions t LEFT JOIN categories c ON c.id = t.category_id '
-    'WHERE t.is_internal = 0 AND t.amount_cents > 0 AND t.$visibleSql '
+    'WHERE t.is_internal = 0 AND $noInvestmentT AND t.amount_cents > 0 AND t.$visibleSql '
     'AND t.booking_date >= ? AND t.booking_date < ? '
     'GROUP BY lower(coalesce(t.counterparty, t.description)) ORDER BY total DESC LIMIT ?',
     [iso(start), iso(end), limit],
@@ -171,7 +171,7 @@ Future<({List<CategoryFlow> expense, List<CategoryFlow> income})> byCategory(
       "coalesce(c.color, '#adb5bd') AS color, coalesce(c.icon, 'tag') AS icon, "
       'abs(sum(t.amount_cents)) AS total, count(*) AS n '
       'FROM transactions t LEFT JOIN categories c ON c.id = t.category_id '
-      'WHERE t.is_internal = 0 AND t.amount_cents $sign 0 AND t.$visibleSql '
+      'WHERE t.is_internal = 0 AND $noInvestmentT AND t.amount_cents $sign 0 AND t.$visibleSql '
       'AND t.booking_date >= ? AND t.booking_date < ? '
       'GROUP BY t.category_id ORDER BY total DESC',
       [iso(start), iso(end)],
@@ -204,4 +204,17 @@ Future<({int cents, int n})> movedBetweenAccounts(DatabaseExecutor db, DateTime 
   return out >= inc
       ? (cents: out, n: (row['out_n'] as int?) ?? 0)
       : (cents: inc, n: (row['in_n'] as int?) ?? 0);
+}
+
+/// Investito nel periodo: acquisti di titoli meno vendite, in centesimi.
+/// Fa parte del risparmio (entrate meno spese), non delle spese.
+Future<int> invested(DatabaseExecutor db, DateTime start, DateTime end) async {
+  final row = (await db.rawQuery(
+    'SELECT coalesce(-sum(t.amount_cents), 0) AS s FROM transactions t '
+    'WHERE t.category_id IN (SELECT id FROM categories WHERE investment = 1) '
+    'AND t.$visibleSql AND t.booking_date >= ? AND t.booking_date < ?',
+    [iso(start), iso(end)],
+  ))
+      .first;
+  return row['s'] as int;
 }

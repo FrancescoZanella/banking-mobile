@@ -27,8 +27,10 @@ class FlowsScreen extends StatefulWidget {
 }
 
 class _FlowsData {
-  _FlowsData(this.totals, this.byCategory, this.moved, this.series, this.trend, this.sources, this.alerts);
+  _FlowsData(this.totals, this.invested, this.byCategory, this.moved, this.series, this.trend, this.sources,
+      this.alerts);
   final cashflow.Totals totals;
+  final int invested;
   final ({List<cashflow.CategoryFlow> expense, List<cashflow.CategoryFlow> income}) byCategory;
   final ({int cents, int n}) moved;
   final List<(DateTime, cashflow.Totals)> series;
@@ -80,6 +82,7 @@ class _FlowsScreenState extends State<FlowsScreen> {
     final lastMonth = barsEnd(period, now);
     return _FlowsData(
       await cashflow.totals(db, period.start, until),
+      await cashflow.invested(db, period.start, until),
       await cashflow.byCategory(db, period.start, until),
       await cashflow.movedBetweenAccounts(db, period.start, until),
       // Grafici dal mese di partenza dei dati, al massimo 12 mesi.
@@ -171,14 +174,20 @@ class _FlowsScreenState extends State<FlowsScreen> {
       mainAxisSpacing: 8,
       crossAxisSpacing: 8,
       childAspectRatio: 1.75,
+      // Risparmiati e Investiti sempre visibili, anche a zero (richiesta dell'utente).
       children: [
         tile('Entrate$soFar', Text(money(t.income), style: big.copyWith(color: AppColors.pos))),
-        tile('Uscite$soFar', Text(money(t.expense), style: big)),
+        tile('Uscite$soFar', Text(money(t.expense), style: big), 'senza investimenti'),
         tile(
-          'Risparmiato',
+          'Risparmiati',
           Text(signedMoney(t.net),
               key: const Key('saved'),
               style: big.copyWith(color: t.net > 0 ? AppColors.pos : (t.net < 0 ? AppColors.neg : null))),
+        ),
+        tile(
+          'Investiti',
+          Text(money(d.invested), key: const Key('invested'), style: big.copyWith(color: AppColors.accent)),
+          'acquisti meno vendite',
         ),
         tile('Tasso di risparmio', rateText,
             average == null ? null : 'media 12 mesi ${average >= 0 ? '${average.round()}%' : 'negativa'}'),

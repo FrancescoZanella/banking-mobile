@@ -12,11 +12,19 @@ import '../sync/sync.dart';
 /// I conti nascosti continuano a sincronizzarsi ma restano fuori dai report.
 const visibleSql = 'account_id NOT IN (SELECT id FROM accounts WHERE hidden = 1)';
 
-/// Uscite che contano come spesa: non giroconti, conti visibili.
-const spendSql = 'is_internal = 0 AND amount_cents < 0 AND $visibleSql';
+/// Non investimenti: comprare titoli è risparmio, non spesa (e venderli non è un'entrata).
+const noInvestmentSql =
+    '(category_id IS NULL OR category_id NOT IN (SELECT id FROM categories WHERE investment = 1))';
 
-/// Entrate che contano: non giroconti, conti visibili.
-const incomeSql = 'is_internal = 0 AND amount_cents > 0 AND $visibleSql';
+/// Come [noInvestmentSql], per le query con la tabella dei movimenti chiamata `t`.
+const noInvestmentT =
+    '(t.category_id IS NULL OR t.category_id NOT IN (SELECT id FROM categories WHERE investment = 1))';
+
+/// Uscite che contano come spesa: non giroconti, non investimenti, conti visibili.
+const spendSql = 'is_internal = 0 AND amount_cents < 0 AND $noInvestmentSql AND $visibleSql';
+
+/// Entrate che contano: non giroconti, non investimenti, conti visibili.
+const incomeSql = 'is_internal = 0 AND amount_cents > 0 AND $noInvestmentSql AND $visibleSql';
 
 /// Ordine dei movimenti: dal giorno più recente; nello stesso giorno (le banche
 /// non danno l'ora) prima quelli scaricati per ultimi.
@@ -65,7 +73,7 @@ Future<Map<String, int>> monthSummary(DatabaseExecutor db, DateTime month) async
     'SELECT coalesce(sum(CASE WHEN amount_cents > 0 THEN amount_cents END), 0) AS income, '
     'coalesce(sum(CASE WHEN amount_cents < 0 THEN -amount_cents END), 0) AS expense, '
     'count(*) AS n FROM transactions '
-    'WHERE is_internal = 0 AND $visibleSql AND booking_date >= ? AND booking_date < ?',
+    'WHERE is_internal = 0 AND $noInvestmentSql AND $visibleSql AND booking_date >= ? AND booking_date < ?',
     [start, end],
   ))
       .first;
@@ -79,7 +87,7 @@ Future<List<Map<String, Object?>>> spendingByCategory(DatabaseExecutor db, DateT
     "coalesce(c.color, '#adb5bd') AS color, coalesce(c.icon, 'tag') AS icon, "
     '-sum(t.amount_cents) AS total '
     'FROM transactions t LEFT JOIN categories c ON c.id = t.category_id '
-    'WHERE t.is_internal = 0 AND t.amount_cents < 0 AND t.$visibleSql '
+    'WHERE t.is_internal = 0 AND $noInvestmentT AND t.amount_cents < 0 AND t.$visibleSql '
     'AND t.booking_date >= ? AND t.booking_date < ? '
     'GROUP BY c.id ORDER BY total DESC',
     [start, end],
@@ -152,6 +160,7 @@ Future<List<ConsentAlert>> consentAlerts(DatabaseExecutor db, {DateTime? now}) a
 const txSelect =
     'SELECT t.*, b.label AS bank_label, coalesce(a.nickname, a.name) AS account_name, '
     'a.currency AS account_currency, c.name AS category_name, c.kind AS category_kind, '
+    'coalesce(c.investment, 0) AS category_investment, '
     "coalesce(c.color, '#adb5bd') AS category_color, coalesce(c.icon, 'tag') AS category_icon "
     'FROM transactions t JOIN accounts a ON a.id = t.account_id '
     'JOIN banks b ON b.key = a.bank_key LEFT JOIN categories c ON c.id = t.category_id';

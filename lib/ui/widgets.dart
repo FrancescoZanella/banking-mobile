@@ -53,6 +53,7 @@ const _icons = <String, IconData>{
   'briefcase': Icons.work_outline,
   'receipt': Icons.receipt_long_outlined,
   'arrows-exchange': Icons.swap_horiz,
+  'chart-line': Icons.show_chart,
   'tag': Icons.sell_outlined,
 };
 
@@ -256,6 +257,7 @@ class _TransactionDetailState extends State<_TransactionDetail> {
       Wrap(spacing: 8, children: [
         if (t['status'] == 'PDNG') const _Badge('In attesa'),
         if (t['is_internal'] == 1) const _Badge('Giroconto · fuori dai totali di tutti i conti'),
+        if (t['category_investment'] == 1) const _Badge('Investimento · risparmio, non spesa'),
       ]),
     ]);
   }

@@ -129,6 +129,8 @@ Future<void> initDb(Database db) async {
   // Migrazioni dei database creati con versioni precedenti dello schema.
   await _addColumnIfMissing(db, 'accounts', 'hidden', 'INTEGER NOT NULL DEFAULT 0');
   await _addColumnIfMissing(db, 'categories', 'icon', 'TEXT');
+  // Categoria di investimento: fuori da spese ed entrate, conta come risparmio.
+  await _addColumnIfMissing(db, 'categories', 'investment', 'INTEGER NOT NULL DEFAULT 0');
   // Movimento già segnalato (o da non segnalare) con la notifica «da categorizzare».
   if (await _addColumnIfMissing(db, 'transactions', 'notified_at', 'TEXT')) {
     // I movimenti scaricati prima di questa funzione non vanno notificati.
@@ -151,6 +153,29 @@ Future<void> initDb(Database db) async {
         'UPDATE categories SET icon = ? WHERE name = ? AND icon IS NULL', [c.icon, c.name]);
   }
   await db.rawUpdate('UPDATE categories SET icon = ? WHERE icon IS NULL', [defaultIcon]);
+
+  // «Investimenti», una volta sola (se poi la elimini non ricompare). Nessuna
+  // regola: i movimenti ci finiscono solo scelti a mano.
+  final investments = int.parse(await getSetting(db, 'investments_version', '0') ?? '0');
+  if (investments < 1) {
+    const c = investmentCategory;
+    await db.rawInsert(
+      'INSERT OR IGNORE INTO categories (name, kind, color, icon) VALUES (?, ?, ?, ?)',
+      [c.name, c.kind, c.color, c.icon],
+    );
+    await db.rawUpdate('UPDATE categories SET investment = 1 WHERE name = ?', [c.name]);
+  }
+  if (investments < 2) {
+    // La prima versione aveva una regola automatica: via, e i movimenti non
+    // scelti a mano tornano alla loro categoria automatica.
+    await db.rawDelete(
+      'DELETE FROM category_rules WHERE pattern = ? AND category_id IN '
+      '(SELECT id FROM categories WHERE investment = 1)',
+      [removedInvestmentRule],
+    );
+    await recategorize(db);
+    await setSetting(db, 'investments_version', '2');
+  }
 
   final version = int.parse(await getSetting(db, 'default_rules_version', '0') ?? '0');
   if (version < defaultRulesVersion) {

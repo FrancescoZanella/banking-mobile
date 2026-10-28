@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import '../app/services.dart';
 import '../core/dates.dart';
 import '../core/money.dart';
+import '../core/periods.dart';
+import '../domain/cashflow.dart' as cashflow;
 import '../domain/reports.dart';
 import '../domain/to_categorize.dart';
 import 'theme.dart';
@@ -23,13 +25,16 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeData {
-  _HomeData(this.accounts, this.summary, this.categories, this.days, this.alerts, this.toCategorize);
+  _HomeData(this.accounts, this.summary, this.categories, this.days, this.alerts, this.toCategorize, this.invested);
   final List<Map<String, Object?>> accounts;
   final Map<String, int> summary;
   final List<Map<String, Object?>> categories;
   final List<(String?, List<Map<String, Object?>>)> days;
   final List<ConsentAlert> alerts;
   final List<Map<String, Object?>> toCategorize;
+
+  /// Investito dall'inizio dei dati: non è nel patrimonio (il conto titoli non si legge).
+  final int invested;
 }
 
 class _HomeScreenState extends State<HomeScreen> {
@@ -72,6 +77,7 @@ class _HomeScreenState extends State<HomeScreen> {
       groupByDay(await recentTransactions(s.db)),
       await consentAlerts(s.db),
       await toCategorize(s.db),
+      await cashflow.invested(s.db, dataStartDay, addDays(now, 1)),
     );
   }
 
@@ -137,6 +143,16 @@ class _HomeScreenState extends State<HomeScreen> {
             Text('${net > 0 ? '+' : ''}${money(net)} questo mese',
                 style: TextStyle(color: net >= 0 ? AppColors.pos : AppColors.neg)),
           ]),
+          if (data.invested != 0)
+            Padding(
+              padding: const EdgeInsets.only(top: 6),
+              child: Row(children: [
+                const Icon(Icons.show_chart, size: 18, color: AppColors.accent),
+                const SizedBox(width: 6),
+                Text('Investito da agosto: ${money(data.invested)}',
+                    key: const Key('home-invested'), style: const TextStyle(color: AppColors.muted)),
+              ]),
+            ),
           if (syncing)
             const Padding(
               padding: EdgeInsets.only(top: 8),

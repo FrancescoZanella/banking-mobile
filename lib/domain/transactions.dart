@@ -166,7 +166,9 @@ class TxPage {
 Future<TxPage> loadTransactions(DatabaseExecutor db, TxFilter f, {int page = 1, DateTime? now}) async {
   final (sql, params) = buildQuery(f, now);
   // Giroconti: neutri sui totali di tutti i conti, reali guardando un conto solo.
-  final internal = f.account != null ? '' : ' AND is_internal = 0';
+  // Investimenti: mai uscite o spese (restano solo nell'elenco). Giroconti: fuori
+  // dai totali di tutti i conti, veri guardando un conto solo.
+  final internal = ' AND $noInvestmentSql${f.account != null ? '' : ' AND is_internal = 0'}';
   final summary = (await db.rawQuery(
     'SELECT count(*) AS n, '
     'coalesce(-sum(CASE WHEN amount_cents < 0$internal THEN amount_cents END), 0) AS spent, '
@@ -183,7 +185,7 @@ Future<TxPage> loadTransactions(DatabaseExecutor db, TxFilter f, {int page = 1, 
           day,
           items,
           items
-              .where((t) => f.account != null || t['is_internal'] != 1)
+              .where((t) => t['category_investment'] != 1 && (f.account != null || t['is_internal'] != 1))
               .fold(0, (s, t) => s + (t['amount_cents'] as int)),
         ),
     ],

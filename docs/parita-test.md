@@ -114,6 +114,7 @@ attesa si perde alla sincronizzazione successiva.
 | Dati | tutto lo storico | dal 1 agosto 2026: i precedenti non si scaricano e vengono cancellati | `preferences_test: dati dal 1 agosto 2026` |
 | Menu delle categorie | per tipo e nome | dalla più usata | `preferences_test: menu delle categorie` |
 | Flussi | mese e anno | anche settimana; uscite ed entrate per categoria | `analysis_flows_test: Flussi …`, `preferences_test: Flussi …` |
+| Investimenti | compravendite in «Altre spese» | categoria «Investimenti», solo a mano: tolti dalle uscite, sommati ai risparmiati, riquadro «Investiti» in Flussi, riga in Home | `investments_test` |
 | Ordine dei movimenti | data, poi id | data, poi gli ultimi scaricati | `preferences_test: Movimenti …` |
 
 I test della logica dei budget (`budget_test`, parte di `budget_categories_test`) restano: il codice
