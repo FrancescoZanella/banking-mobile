@@ -1,7 +1,8 @@
 # Guida all'uso
 
-L'app si apre con lo sblocco del telefono (impronta, volto o PIN) e si blocca da sola dopo 30 minuti
-senza tocchi. La barra in basso ha cinque voci: **Home, Analisi, Movimenti, Budget, Altro**
+L'app (icona: banca bianca su viola) si apre con lo sblocco del telefono (impronta, volto o PIN) e si
+blocca da sola dopo 30 minuti senza tocchi. Se il telefono sembra avere i permessi di root, dopo lo
+sblocco compare un avviso (l'app resta utilizzabile). La barra in basso ha cinque voci: **Home, Analisi, Movimenti, Budget, Altro**
 (in Altro: Flussi, Categorie, Conti, Impostazioni).
 
 ## Home
@@ -81,3 +82,31 @@ non vengono mai sovrascritte.
 ## Impostazioni (Altro → Impostazioni)
 
 APP_ID e chiave `.pem` dell'applicazione Enable Banking, salvati nel Keystore del telefono.
+
+- L'APP_ID salvato si vede solo come **«•••• ultime 4 cifre»**; il campo per inserirne uno nuovo nasconde
+  il testo (l'icona dell'occhio lo mostra).
+- Dopo il salvataggio **cancella il `.pem` dalla cartella Download**: all'interno dell'app non ne resta
+  nessuna copia.
+- *Rimuovi credenziali* le cancella dal Keystore; i dati già scaricati restano.
+
+## Domande frequenti
+
+**Serve il PC o il cavo USB?** No. Il PC serve solo per costruire e installare gli aggiornamenti.
+
+**Dove sono i miei dati?** Solo sul telefono, nella memoria privata dell'app, in un database cifrato.
+Non finiscono su Google, sul PC o su GitHub. Vedi [Sicurezza](sicurezza.md).
+
+**Cosa succede se disinstallo l'app o cambio telefono?** I dati sul telefono si perdono (il backup è
+disattivato apposta). Si reinseriscono APP_ID e `.pem`, si ricollegano le banche e l'app riscarica lo
+storico che ogni banca concede (spesso ~90 giorni).
+
+**Perché un movimento è in «Altre spese»?** Nessuna regola l'ha riconosciuto. Apri il dettaglio, scegli
+la categoria e spunta *Applica a tutti i movimenti di «…»*: varrà anche per i prossimi.
+
+**Un giroconto tra i miei conti compare tra le spese.** I giroconti si riconoscono solo dall'IBAN dei
+tuoi conti o dal tuo nome. Se la banca non li indica, scegli *Giroconti* dal dettaglio del movimento.
+
+**Non arrivano movimenti nuovi.** Controlla in Conti lo stato del consenso (se scaduto: *Rinnova*) e lo
+*Storico sync*. Ogni conto si aggiorna al massimo ogni 12 ore, per il limite delle API PSD2.
+
+**Posso fare screenshot dell'app?** No, sono bloccati apposta (anche l'anteprima nelle app recenti).

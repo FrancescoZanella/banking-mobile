@@ -23,6 +23,7 @@ release firmata installata sul telefono (Android 14).
   salvata cifrata con una chiave del Keystore hardware. Test sul telefono: `integration_test/db_encryption_test.dart`
   verifica che senza chiave, o con una chiave errata, il file sia illeggibile e il testo non compaia.
 - ✅ **APP_ID e chiave privata `.pem`** stanno solo nel Keystore, mai nel DB (lo verifica un test).
+  Nelle Impostazioni l'APP_ID salvato si vede solo come «•••• ultime 4 cifre».
 - 🔧 **Corretto:** il selettore di file (`file_picker`) lasciava una **copia in chiaro del `.pem`**
   nella cache privata dell'app. Ora la copia viene cancellata subito dopo la lettura, e all'avvio
   l'app svuota le cartelle temporanee dei plugin.
@@ -111,6 +112,13 @@ release firmata installata sul telefono (Android 14).
 | App Link con `state` falso da un'altra app | apre l'app, collegamento rifiutato |
 | Screenshot con l'app in primo piano | nero |
 | Porte in ascolto | nessuna |
+
+## Repository
+
+- Repo dell'app **privata**; le due repo pubbliche (`Bankrelay`, `francescozanella.github.io`) contengono
+  solo la pagina di ritorno, `assetlinks.json` e un README.
+- Controllo della cronologia completa (28/10/2026): nessun `.pem`, keystore, `key.properties`, `.env` o
+  database mai committato; nessun APP_ID, password, token, IBAN reale o indirizzo email nei contenuti.
 
 ## Rischi residui
 

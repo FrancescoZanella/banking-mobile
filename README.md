@@ -1,32 +1,81 @@
-# Banking Dashboard per Android
+# Banking Dashboard · Android
 
-App Android personale, scritta in Flutter, che raccoglie in un'unica vista i conti di più banche
-letti tramite le API PSD2 (AIS) di [Enable Banking](https://enablebanking.com). È la versione per
-telefono della dashboard web (`banking-dashboard`): **per l'utente funziona allo stesso modo**,
-ma non serve accendere il PC.
+**I conti di tutte le tue banche in un'unica app, sul telefono, senza server.**
+
+App Android personale, scritta in Flutter, che legge i conti tramite le API PSD2 (AIS) di
+[Enable Banking](https://enablebanking.com) e li analizza: patrimonio, movimenti, spese per categoria,
+flussi di cassa, budget e abbonamenti. È la versione per telefono della dashboard web
+(`banking-dashboard`): **per l'utente funziona allo stesso modo**, ma non serve accendere il PC.
+
+| | |
+|---|---|
+| **Piattaforma** | Android 9+ (testata su Android 14, HyperOS 2) |
+| **Tecnologia** | Flutter 3.32 · Dart 3.8 · SQLCipher · Android Keystore · WorkManager |
+| **Banche** | tutte quelle italiane del catalogo Enable Banking |
+| **Dati** | solo sul telefono, cifrati; l'unico servizio contattato è `api.enablebanking.com` |
+| **Stato** | completa: fasi 0-8 chiuse, 70 test, audit OWASP MASVS ([rapporto](docs/sicurezza.md)) |
+
+## Cosa fa
+
+- **Home:** patrimonio totale, schede dei conti, avvisi su consensi e budget, spese del mese, ultimi
+  movimenti raggruppati per giorno.
+- **Movimenti:** ricerca, filtri (conto, categoria, periodo, tipo, importo), totali, export CSV.
+  Dal dettaglio di un movimento si cambia la categoria, anche con una regola per i movimenti futuri.
+- **Analisi:** settimana, mese o anno, confronto con il periodo precedente allo stesso giorno, curva
+  cumulata, ultimi 12 mesi, categorie ed esercenti.
+- **Flussi:** entrate, uscite, risparmio e tasso di risparmio, andamento del patrimonio, entrate ricorrenti.
+- **Budget e abbonamenti:** limiti mensili con previsione a fine mese, abbonamenti riconosciuti in automatico.
+- **Categorie e regole:** icone, colori, regole per testo o codice esercente (MCC).
+- **Giroconti** tra i tuoi conti riconosciuti dall'IBAN o dal tuo nome: visibili, ma esclusi dai totali.
+
+## Sicurezza in breve
+
+- Sblocco con **impronta, volto o PIN** del telefono; blocco dopo 30 minuti di inattività.
+- **Database cifrato** (SQLCipher, AES-256) con la chiave nel **Keystore** hardware; APP_ID e chiave
+  privata di Enable Banking solo nel Keystore.
+- **Niente backup** su Google, **niente screenshot**, **solo HTTPS** con le CA di sistema, nessuna porta aperta.
+- Login con la banca in una scheda del browser **in incognito**; ritorno nell'app tramite
+  **App Link verificato** e `state` monouso.
+- **Consenso bancario ~180 giorni:** sincronizzazione automatica (all'apertura e ogni ~12 ore in
+  background) e notifica prima della scadenza.
+
+Dettagli, prove e rischi residui in [docs/sicurezza.md](docs/sicurezza.md).
+
+## Documentazione
 
 | Documento | Per chi | Contenuto |
 |---|---|---|
-| [Installazione](docs/installazione.md) | chi la installa o la aggiorna | ambiente, chiave di firma, build di release, primo avvio, aggiornamenti, ripristino |
-| [Guida all'uso](docs/guida-utente.md) | chi la usa | pagine, banche e consensi, sincronizzazione, categorie, budget |
-| [Architettura](docs/architettura.md) | chi modifica il codice | moduli, flussi, dati, differenze dal web |
+| [Guida all'uso](docs/guida-utente.md) | chi la usa | pagine, banche e consensi, sincronizzazione, categorie, budget, domande frequenti |
+| [Installazione](docs/installazione.md) | chi la installa o la aggiorna | ambiente, chiave di firma, build di release, primo avvio, aggiornamenti |
+| [Architettura](docs/architettura.md) | chi modifica il codice | moduli, flussi, dati, codice nativo, differenze dal web |
+| [Sviluppo](docs/sviluppo.md) | chi modifica il codice | struttura della repo, test, versioni fissate, cosa non va mai su GitHub |
 | [Sicurezza](docs/sicurezza.md) | tutti | audit OWASP MASVS, protezioni, prove sul telefono, rischi residui |
-| [Sviluppo](docs/sviluppo.md) | chi modifica il codice | test, versioni fissate, telefono di prova, convenzioni |
-| [Parità dei test](docs/parita-test.md) | chi modifica il codice | ogni test del web e il suo corrispondente qui |
+| [Parità dei test](docs/parita-test.md) | chi modifica il codice | ogni test della versione web e il suo corrispondente qui |
 
-## In breve
+## Avvio rapido (sviluppo)
 
-- **Sblocco con impronta, volto o PIN del telefono**, nessuna password dell'app. Si blocca dopo
-  30 minuti di inattività; screenshot e anteprima nelle app recenti sono bloccati.
-- **Login con la banca ogni ~180 giorni:** il consenso dura il massimo concesso dalla banca; nel
-  frattempo la sincronizzazione è automatica, all'apertura e in background ogni ~12 ore, con una
-  notifica quando un consenso sta per scadere.
-- **Dati solo sul telefono:** database SQLCipher con la chiave nel Keystore di Android, niente backup
-  su Google. L'unico servizio contattato è `api.enablebanking.com`, solo in HTTPS.
-- **Niente doppi conteggi:** i giroconti tra i tuoi conti restano visibili ma sono esclusi da tutti i totali.
+```
+flutter pub get
+flutter analyze
+flutter test
+```
+
+Per la build firmata e l'installazione sul telefono vedi [Installazione](docs/installazione.md).
+
+## Struttura
+
+```
+lib/               codice dell'app (core, data, bank, sync, domain, security, ui)
+test/              test di logica e delle schermate (parità con la versione web)
+integration_test/  test sul telefono (cifratura del database)
+android/           progetto Android: manifest, icone, codice nativo (MainActivity.kt), firma
+relay/             sorgenti delle pagine pubbliche su GitHub Pages (ritorno dalla banca, assetlinks.json)
+docs/              documentazione
+```
 
 ## Limiti noti
 
 - Nessuna conversione di valuta: i conti non in euro vanno nascosti (pagina Conti).
 - Lo storico dipende dalla banca: alcune forniscono solo ~90 giorni anche al primo collegamento.
-- Il telefono e il PC hanno dati separati: ognuno ha il suo collegamento alle banche.
+- Telefono e PC hanno dati separati: ognuno ha il suo collegamento alle banche.
+- Repo privata e app per uso personale: non è pubblicata su Google Play.

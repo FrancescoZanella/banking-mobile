@@ -23,6 +23,25 @@ lib/
   ui/                  una schermata per pagina + widgets (feed, dettaglio, avvisi, periodo) e charts
 ```
 
+**Codice nativo** (`android/app/src/main/kotlin/…/MainActivity.kt`), raggiunto con due MethodChannel:
+
+| Canale | Metodo | A cosa serve |
+|---|---|---|
+| `bankingmobile/custom_tabs` | `open` | login con la banca in una Custom Tab effimera (incognito) |
+| `bankingmobile/device` | `isRooted` | indizi di root, solo per un avviso |
+
+All'avvio `MainActivity` imposta `FLAG_SECURE` e svuota le cartelle temporanee dei plugin
+(`cache/file_picker`, `cache/share_plus`).
+
+**Risorse Android:** icona adattiva vettoriale (`mipmap-anydpi-v26/ic_launcher.xml`, banca su
+`#7C83FF` con variante monocromatica), icona delle notifiche `drawable/ic_notification.xml` (tenuta da
+`raw/keep.xml` perché è usata per nome dal codice Dart), `xml/network_security_config.xml` e
+`xml/data_extraction_rules.xml`.
+
+**Pagine pubbliche** (sorgenti in `relay/`, pubblicate con GitHub Pages): `relay/app/index.html` è la
+pagina di ritorno dalla banca (repo `Bankrelay`), `relay/user-site/` contiene `assetlinks.json` (repo
+`francescozanella.github.io`).
+
 Le schermate leggono il DB direttamente tramite le funzioni di `domain/` e si ricaricano quando
 `SyncRunner` notifica un cambiamento (sincronizzazione, banca collegata, categoria cambiata).
 

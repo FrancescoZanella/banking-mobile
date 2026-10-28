@@ -1,5 +1,38 @@
 # Sviluppo
 
+## Struttura della repo
+
+| Percorso | Contenuto |
+|---|---|
+| `lib/` | codice dell'app, vedi [Architettura](architettura.md) |
+| `test/` | test di logica e delle schermate, uno per area (`bank`, `transactions`, `analysis_flows`, `budget_categories`, `security`, …) |
+| `integration_test/` | test da eseguire sul telefono |
+| `android/` | progetto Android: manifest, risorse, `MainActivity.kt`, firma e R8 (`app/build.gradle.kts`, `app/proguard-rules.pro`) |
+| `relay/` | sorgenti delle pagine pubbliche (ritorno dalla banca, `assetlinks.json`) |
+| `assets/icon.png` | logo mostrato nella schermata di sblocco |
+| `docs/` | documentazione |
+
+Non sono nella repo (sono in `.gitignore` o generati): `build/`, `.dart_tool/`, file dell'IDE,
+`local.properties`.
+
+## Cosa non va mai su GitHub
+
+- Chiavi e segreti: `*.pem`, `*.jks`, `*.keystore`, `key.properties`, `.env` (già in `.gitignore`).
+  La chiave di firma sta in `%LOCALAPPDATA%\BankingMobile\signing`, la chiave di Enable Banking solo
+  nel Keystore del telefono.
+- Database e dati veri: `*.db`, CSV esportati, screenshot con importi.
+- Nei test solo dati inventati (IBAN come `IT11`, `IT02`; chiave `.pem` finta con il solo testo
+  `CHIAVE-DI-PROVA-NON-VALIDA`).
+
+Controllo prima di un push (nessuna riga deve uscire):
+
+```
+git log --all --name-only --pretty=format: | sort -u | grep -iE "\.pem$|\.jks$|\.keystore$|key\.properties|\.env$|\.db$"
+git grep -nE "BEGIN [A-Z ]*PRIVATE KEY" -- ':!test' ':!docs'
+```
+
+L'ultimo controllo completo della cronologia (28/10/2026) non ha trovato segreti.
+
 ## Test
 
 ```

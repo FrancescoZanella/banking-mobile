@@ -27,7 +27,8 @@ class FakeAuth implements Authenticator {
   }
 }
 
-const testPem = '-----BEGIN PRIVATE KEY-----\nMIIBVQIBADANBgkqhkiG9w0BAQEFAASCAT8wggE7\n-----END PRIVATE KEY-----';
+// Finta: solo le righe di intestazione, nessun dato di una chiave vera.
+const testPem = '-----BEGIN PRIVATE KEY-----\nCHIAVE-DI-PROVA-NON-VALIDA\n-----END PRIVATE KEY-----';
 
 void main() {
   group('AppLock', () {
