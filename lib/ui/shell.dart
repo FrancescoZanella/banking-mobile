@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 import 'accounts_screen.dart';
 import 'analysis_screen.dart';
-import 'budget_screen.dart';
 import 'categories_screen.dart';
 import 'flows_screen.dart';
 import 'home_screen.dart';
@@ -26,7 +25,7 @@ class _ShellState extends State<Shell> {
     NavigationDestination(icon: Icon(Icons.home_outlined), selectedIcon: Icon(Icons.home), label: 'Home'),
     NavigationDestination(icon: Icon(Icons.pie_chart_outline), selectedIcon: Icon(Icons.pie_chart), label: 'Analisi'),
     NavigationDestination(icon: Icon(Icons.list_alt_outlined), selectedIcon: Icon(Icons.list_alt), label: 'Movimenti'),
-    NavigationDestination(icon: Icon(Icons.track_changes_outlined), selectedIcon: Icon(Icons.track_changes), label: 'Budget'),
+    NavigationDestination(icon: Icon(Icons.swap_horiz), label: 'Flussi'),
     NavigationDestination(icon: Icon(Icons.more_horiz), label: 'Altro'),
   ];
 
@@ -36,13 +35,12 @@ class _ShellState extends State<Shell> {
       HomeScreen(
         onShowAll: () => setState(() => _index = 2),
         onShowAnalysis: () => setState(() => _index = 1),
-        onShowBudget: () => setState(() => _index = 3),
         onShowAccounts: () =>
             Navigator.of(context).push(MaterialPageRoute(builder: (_) => const AccountsScreen())),
       ),
       const AnalysisScreen(),
       const TransactionsScreen(),
-      const BudgetScreen(),
+      const FlowsScreen(),
       const MorePage(),
     ];
     return Scaffold(
@@ -75,7 +73,6 @@ class MorePage extends StatelessWidget {
         const SizedBox(height: 16),
         Card(
           child: Column(children: [
-            item(Icons.swap_horiz, 'Flussi', const FlowsScreen()),
             item(Icons.category_outlined, 'Categorie', const CategoriesScreen()),
             item(Icons.account_balance_outlined, 'Conti', const AccountsScreen()),
             item(Icons.settings_outlined, 'Impostazioni', const SettingsScreen()),

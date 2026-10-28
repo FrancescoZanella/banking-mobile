@@ -112,7 +112,10 @@ class CumulativeChart extends StatelessWidget {
     final step = _step(top);
     List<FlSpot> spots(List<int> v) => [for (var i = 0; i < v.length; i++) FlSpot(i.toDouble(), v[i].toDouble())];
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      ChartLegend([(currentLabel, AppColors.accent, false), (previousLabel, AppColors.muted, true)]),
+      ChartLegend([
+        (currentLabel, AppColors.accent, false),
+        if (previous.isNotEmpty) (previousLabel, AppColors.muted, true),
+      ]),
       const SizedBox(height: 10),
       SizedBox(
         height: 210,

@@ -1,3 +1,4 @@
+import 'config.dart';
 import 'dates.dart';
 
 enum PeriodKind { week, month, year }
@@ -86,3 +87,17 @@ List<String> axisLabels(Period p) {
   if (p.kind == PeriodKind.week) return const ['lun', 'mar', 'mer', 'gio', 'ven', 'sab', 'dom'];
   return [for (var d = 1; d <= (p.days > 31 ? p.days : 31); d++) '$d'];
 }
+
+/// Primo giorno con dati (AppConfig.dataStart).
+final DateTime dataStartDay = parseIsoDay(AppConfig.dataStart)!;
+
+/// Quanti mesi mostrare nei grafici fino a [lastMonthStart] incluso: al
+/// massimo [max], mai prima del mese di partenza dei dati.
+int monthsFromStart(DateTime lastMonthStart, {int max = 12}) {
+  final first = DateTime.utc(dataStartDay.year, dataStartDay.month);
+  final count = (lastMonthStart.year - first.year) * 12 + lastMonthStart.month - first.month + 1;
+  return count < 1 ? 1 : (count > max ? max : count);
+}
+
+/// Il confronto con il periodo precedente ha senso solo se cade tutto nei dati.
+bool comparisonAvailable(Period p) => !previous(p).start.isBefore(dataStartDay);

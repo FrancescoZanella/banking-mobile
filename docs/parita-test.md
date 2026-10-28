@@ -104,3 +104,17 @@ comportamento per l'utente. Stato: ✅ portato e verde · ➖ non applicabile (m
 
 La versione web ha ancora il difetto corretto qui: una categoria scelta a mano su un movimento in
 attesa si perde alla sincronizzazione successiva.
+
+## Differenze volute dal web (richieste del 28/10/2026)
+
+| Comportamento | Web | App | Test |
+|---|---|---|---|
+| Pagina Budget e abbonamenti | presente | tolta; Flussi al suo posto nella barra | `security_test: … barra con le 5 voci` |
+| Giroconti | esclusi da tutti i totali | esclusi dai totali di tutti i conti; contati filtrando un conto solo; in Flussi «Spostato tra i tuoi conti» | `transactions_test: giroconto scelto a mano…`, `preferences_test: Flussi…` |
+| Dati | tutto lo storico | dal 1 agosto 2026: i precedenti non si scaricano e vengono cancellati | `preferences_test: dati dal 1 agosto 2026` |
+| Menu delle categorie | per tipo e nome | dalla più usata | `preferences_test: menu delle categorie` |
+| Flussi | mese e anno | anche settimana; uscite ed entrate per categoria | `analysis_flows_test: Flussi …`, `preferences_test: Flussi …` |
+| Ordine dei movimenti | data, poi id | data, poi gli ultimi scaricati | `preferences_test: Movimenti …` |
+
+I test della logica dei budget (`budget_test`, parte di `budget_categories_test`) restano: il codice
+è ancora presente anche se la pagina è stata tolta.

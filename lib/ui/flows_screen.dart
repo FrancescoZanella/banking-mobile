@@ -7,13 +7,15 @@ import '../core/money.dart';
 import '../core/periods.dart';
 import '../domain/cashflow.dart' as cashflow;
 import '../domain/reports.dart';
-import 'analysis_screen.dart' show barsEnd, monthInPeriod, shortMonth;
+import '../domain/transactions.dart';
+import 'analysis_screen.dart' show barsEnd, monthInPeriod, openTransactions, shortMonth;
 import 'charts.dart';
 import 'theme.dart';
 import 'widgets.dart';
 
-/// Entrate e flusso di cassa: totali, tasso di risparmio, 12 mesi, patrimonio,
-/// fonti delle entrate con le ricorrenti. Come flows.html del web.
+/// Entrate e flusso di cassa: totali, tasso di risparmio, uscite ed entrate per
+/// categoria, mesi, patrimonio, fonti delle entrate con le ricorrenti. Come
+/// flows.html del web, più la ripartizione per categoria e la settimana.
 class FlowsScreen extends StatefulWidget {
   const FlowsScreen({super.key, this.now});
 
@@ -25,8 +27,10 @@ class FlowsScreen extends StatefulWidget {
 }
 
 class _FlowsData {
-  _FlowsData(this.totals, this.series, this.trend, this.sources, this.alerts);
+  _FlowsData(this.totals, this.byCategory, this.moved, this.series, this.trend, this.sources, this.alerts);
   final cashflow.Totals totals;
+  final ({List<cashflow.CategoryFlow> expense, List<cashflow.CategoryFlow> income}) byCategory;
+  final ({int cents, int n}) moved;
   final List<(DateTime, cashflow.Totals)> series;
   final ({List<DateTime> months, List<int> values}) trend;
   final List<cashflow.IncomeSource> sources;
@@ -34,7 +38,6 @@ class _FlowsData {
 }
 
 class _FlowsScreenState extends State<FlowsScreen> {
-  // Nei flussi la settimana non c'è: solo mese e anno.
   late Period _period = periodFor(PeriodKind.month, today(widget.now));
   Future<_FlowsData>? _data;
   AppServices? _services;
@@ -74,10 +77,14 @@ class _FlowsScreenState extends State<FlowsScreen> {
     final period = _period;
     final until = elapsedEnd(period, now);
     final visible = [for (final a in await accountsOverview(db)) if (a['hidden'] != 1) a];
+    final lastMonth = barsEnd(period, now);
     return _FlowsData(
       await cashflow.totals(db, period.start, until),
-      await cashflow.monthly(db, barsEnd(period, now)),
-      await balanceTrend(db, visible, today: now),
+      await cashflow.byCategory(db, period.start, until),
+      await cashflow.movedBetweenAccounts(db, period.start, until),
+      // Grafici dal mese di partenza dei dati, al massimo 12 mesi.
+      await cashflow.monthly(db, lastMonth, n: monthsFromStart(lastMonth)),
+      await balanceTrend(db, visible, today: now, n: monthsFromStart(DateTime.utc(now.year, now.month))),
       await cashflow.incomeSources(db, period.start, until, now),
       await consentAlerts(db),
     );
@@ -86,25 +93,23 @@ class _FlowsScreenState extends State<FlowsScreen> {
   @override
   Widget build(BuildContext context) {
     final syncing = Services.of(context).sync.running;
-    return Scaffold(
-      appBar: AppBar(title: const Text('Flussi')),
-      body: FutureBuilder<_FlowsData>(
+    return FutureBuilder<_FlowsData>(
         future: _data,
         builder: (context, snap) {
           final data = snap.data;
           return RefreshIndicator(
             onRefresh: () async => _reload(),
             child: ListView(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 32),
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
               children: [
                 if (data != null) for (final a in data.alerts) ConsentBanner(alert: a),
                 const Text('Entrate e flusso di cassa',
-                    style: TextStyle(fontSize: 24, fontWeight: FontWeight.w700)),
+                    style: TextStyle(fontSize: 28, fontWeight: FontWeight.w700)),
                 const SizedBox(height: 10),
                 PeriodBar(
                   period: _period,
                   now: widget.now,
-                  kinds: const [(PeriodKind.month, 'Mese'), (PeriodKind.year, 'Anno')],
+                  kinds: const [(PeriodKind.week, 'Settimana'), (PeriodKind.month, 'Mese'), (PeriodKind.year, 'Anno')],
                   onChanged: _select,
                 ),
                 if (syncing) const Text('Sincronizzazione in corso…', style: TextStyle(color: AppColors.muted)),
@@ -116,6 +121,13 @@ class _FlowsScreenState extends State<FlowsScreen> {
                 else ...[
                   _tiles(data),
                   const SizedBox(height: 16),
+                  _categories('Uscite per categoria', data.byCategory.expense, 'out',
+                      'Nessuna uscita in questo periodo.', const Key('expense-by-category')),
+                  const SizedBox(height: 16),
+                  _categories('Entrate per categoria', data.byCategory.income, 'in',
+                      'Nessuna entrata in questo periodo.', const Key('income-by-category')),
+                  if (data.moved.n > 0) ...[const SizedBox(height: 16), _moved(data.moved)],
+                  const SizedBox(height: 16),
                   _flows(data),
                   const SizedBox(height: 16),
                   _networth(data),
@@ -126,7 +138,6 @@ class _FlowsScreenState extends State<FlowsScreen> {
             ),
           );
         },
-      ),
     );
   }
 
@@ -175,11 +186,92 @@ class _FlowsScreenState extends State<FlowsScreen> {
     );
   }
 
+  /// Uscite o entrate del periodo per categoria; tocco → Movimenti filtrati.
+  Widget _categories(String title, List<cashflow.CategoryFlow> rows, String direction, String empty, Key key) {
+    final from = iso(_period.start), to = iso(addDays(_period.end, -1));
+    final total = rows.fold<int>(0, (s, c) => s + c.total);
+    return Card(
+      key: key,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Row(children: [
+            Expanded(child: Text(title, style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w600))),
+            Text(money(total),
+                style: TextStyle(fontWeight: FontWeight.w600, color: direction == 'in' ? AppColors.pos : null)),
+          ]),
+          const SizedBox(height: 8),
+          if (rows.isEmpty)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Text(empty, style: const TextStyle(color: AppColors.muted)),
+            ),
+          for (final c in rows)
+            InkWell(
+              key: Key('flow-$direction-${c.id ?? 'none'}'),
+              borderRadius: BorderRadius.circular(12),
+              onTap: () => openTransactions(
+                context,
+                TxFilter(category: c.id == null ? 'none' : '${c.id}', direction: direction, from: from, to: to),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                child: Row(children: [
+                  CategoryAvatar(icon: c.icon, color: c.color, size: 36),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      Row(children: [
+                        Expanded(
+                          child: Text.rich(
+                            TextSpan(text: c.name, children: [
+                              TextSpan(text: ' · ${c.n} mov.', style: const TextStyle(color: AppColors.muted)),
+                            ]),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        Text(money(c.total), style: const TextStyle(fontWeight: FontWeight.w600)),
+                      ]),
+                      const SizedBox(height: 6),
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(3),
+                        child: LinearProgressIndicator(
+                          value: c.pct / 100,
+                          minHeight: 5,
+                          backgroundColor: AppColors.surface2,
+                          color: hexColor(c.color),
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text('${c.pct.round()}% del totale', style: const TextStyle(color: AppColors.muted, fontSize: 12)),
+                    ]),
+                  ),
+                ]),
+              ),
+            ),
+        ]),
+      ),
+    );
+  }
+
+  /// Giroconti del periodo: fuori da entrate e uscite, ma visibili.
+  Widget _moved(({int cents, int n}) moved) => Card(
+        key: const Key('moved-between-accounts'),
+        child: ListTile(
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+          leading: const CategoryAvatar(icon: 'arrows-exchange', color: '#ced4da'),
+          title: const Text('Spostato tra i tuoi conti'),
+          subtitle: Text('${moved.n} ${moved.n == 1 ? 'giroconto' : 'giroconti'} · fuori da entrate e uscite',
+              style: const TextStyle(color: AppColors.muted, fontSize: 12)),
+          trailing: Text(money(moved.cents), style: const TextStyle(fontWeight: FontWeight.w600)),
+        ),
+      );
+
   Widget _flows(_FlowsData d) => Card(
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            const Text('Entrate e uscite, ultimi 12 mesi', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600)),
+            const Text('Entrate e uscite per mese', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600)),
             const Text('la linea è il risparmio del mese · tocca un mese per aprirlo',
                 style: TextStyle(color: AppColors.muted, fontSize: 13)),
             const SizedBox(height: 12),
@@ -205,7 +297,7 @@ class _FlowsScreenState extends State<FlowsScreen> {
           const Text('Andamento del patrimonio', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600)),
           Text(
             'Saldo totale in euro a fine mese, ricostruito dai movimenti'
-            '${delta != null ? ' · ${signedMoney(delta)} in 12 mesi' : ''}',
+            '${delta != null ? ' · ${signedMoney(delta)} da ${shortMonth(d.trend.months.first)}' : ''}',
             style: const TextStyle(color: AppColors.muted, fontSize: 13),
           ),
           const SizedBox(height: 12),

@@ -114,7 +114,7 @@ void main() {
       await tester.tap(find.byKey(const Key('unlock')));
       await settle(tester);
       expect(find.byType(Shell), findsOneWidget);
-      for (final label in ['Home', 'Analisi', 'Movimenti', 'Budget', 'Altro']) {
+      for (final label in ['Home', 'Analisi', 'Movimenti', 'Flussi', 'Altro']) {
         expect(find.text(label), findsWidgets);
       }
     });
@@ -155,7 +155,8 @@ void main() {
       await settle(tester);
       await tester.tap(find.text('Altro').last);
       await settle(tester);
-      for (final label in ['Flussi', 'Categorie', 'Conti', 'Impostazioni']) {
+      // Flussi è nella barra in basso, non più in Altro.
+      for (final label in ['Categorie', 'Conti', 'Impostazioni']) {
         expect(find.text(label), findsOneWidget);
       }
       await tester.tap(find.text('Impostazioni'));

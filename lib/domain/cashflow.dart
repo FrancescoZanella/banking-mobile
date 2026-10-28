@@ -147,3 +147,61 @@ Future<List<IncomeSource>> incomeSources(
       ),
   ];
 }
+
+class CategoryFlow {
+  const CategoryFlow(this.id, this.name, this.color, this.icon, this.total, this.n, this.pct);
+  final int? id;
+  final String name;
+  final String color;
+  final String icon;
+
+  /// Centesimi, sempre positivi.
+  final int total;
+  final int n;
+  final double pct;
+}
+
+/// Uscite ed entrate del periodo divise per categoria, dalla più grande.
+/// I giroconti non ci sono: vedi [movedBetweenAccounts].
+Future<({List<CategoryFlow> expense, List<CategoryFlow> income})> byCategory(
+    DatabaseExecutor db, DateTime start, DateTime end) async {
+  Future<List<CategoryFlow>> side(String sign) async {
+    final rows = await db.rawQuery(
+      "SELECT t.category_id AS id, coalesce(c.name, 'Senza categoria') AS name, "
+      "coalesce(c.color, '#adb5bd') AS color, coalesce(c.icon, 'tag') AS icon, "
+      'abs(sum(t.amount_cents)) AS total, count(*) AS n '
+      'FROM transactions t LEFT JOIN categories c ON c.id = t.category_id '
+      'WHERE t.is_internal = 0 AND t.amount_cents $sign 0 AND t.$visibleSql '
+      'AND t.booking_date >= ? AND t.booking_date < ? '
+      'GROUP BY t.category_id ORDER BY total DESC',
+      [iso(start), iso(end)],
+    );
+    final sum = rows.fold<int>(0, (s, r) => s + (r['total'] as int));
+    return [
+      for (final r in rows)
+        CategoryFlow(r['id'] as int?, r['name'] as String, r['color'] as String, r['icon'] as String,
+            r['total'] as int, r['n'] as int, sum == 0 ? 0 : 100 * (r['total'] as int) / sum),
+    ];
+  }
+
+  return (expense: await side('<'), income: await side('>'));
+}
+
+/// Soldi spostati tra i tuoi conti nel periodo: neutri sul totale, mostrati a
+/// parte. Ogni giroconto ha un'uscita e un'entrata; se uno dei due conti non è
+/// collegato se ne vede uno solo, quindi si prende il lato più grande.
+Future<({int cents, int n})> movedBetweenAccounts(DatabaseExecutor db, DateTime start, DateTime end) async {
+  final row = (await db.rawQuery(
+    'SELECT coalesce(-sum(CASE WHEN amount_cents < 0 THEN amount_cents END), 0) AS out_c, '
+    'coalesce(sum(CASE WHEN amount_cents > 0 THEN amount_cents END), 0) AS in_c, '
+    'sum(CASE WHEN amount_cents < 0 THEN 1 ELSE 0 END) AS out_n, '
+    'sum(CASE WHEN amount_cents > 0 THEN 1 ELSE 0 END) AS in_n '
+    'FROM transactions WHERE is_internal = 1 AND $visibleSql AND booking_date >= ? AND booking_date < ?',
+    [iso(start), iso(end)],
+  ))
+      .first;
+  final out = row['out_c'] as int, inc = row['in_c'] as int;
+  return out >= inc
+      ? (cents: out, n: (row['out_n'] as int?) ?? 0)
+      : (cents: inc, n: (row['in_n'] as int?) ?? 0);
+}

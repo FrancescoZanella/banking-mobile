@@ -205,14 +205,23 @@ Future<SyncResult> syncAccount(Database db, EnableBankingApi api, Map<String, Ob
     strategy = 'default';
   }
 
+  // Mai prima della data di partenza dei dati.
+  final from = dateFrom.compareTo(AppConfig.dataStart) < 0 ? AppConfig.dataStart : dateFrom;
   final started = utcNow(now);
   final result = SyncResult(accountId);
   try {
     final uid = account['uid'] as String;
-    final txs = await api.getTransactions(uid, dateFrom, dateTo: iso(t), strategy: strategy);
+    // Alcune banche ignorano date_from: i movimenti più vecchi si scartano comunque.
+    final txs = [
+      for (final tx in await api.getTransactions(uid, from, dateTo: iso(t), strategy: strategy))
+        if (((tx['booking_date'] ?? tx['transaction_date'] ?? tx['value_date']) as String? ?? AppConfig.dataStart)
+                .compareTo(AppConfig.dataStart) >=
+            0)
+          tx,
+    ];
     final balances = await api.getBalances(uid);
     await db.transaction((txn) async {
-      result.added = await storeTransactions(txn, accountId, txs, dateFrom,
+      result.added = await storeTransactions(txn, accountId, txs, from,
           markNotified: strategy == 'longest' ? 'storico' : null);
       await storeBalances(txn, accountId, balances);
       await txn.update('accounts', {'last_sync_at': utcNow(now)}, where: 'id = ?', whereArgs: [accountId]);

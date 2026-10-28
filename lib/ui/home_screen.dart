@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import '../app/services.dart';
 import '../core/dates.dart';
 import '../core/money.dart';
-import '../domain/budget.dart' as budget;
 import '../domain/reports.dart';
 import '../domain/to_categorize.dart';
 import 'theme.dart';
@@ -12,26 +11,23 @@ import 'widgets.dart';
 /// Home: patrimonio, schede dei conti, avvisi, mese in corso, feed per giorno.
 /// Come home.html del web.
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key, this.onShowAll, this.onShowAnalysis, this.onShowAccounts, this.onShowBudget});
+  const HomeScreen({super.key, this.onShowAll, this.onShowAnalysis, this.onShowAccounts});
 
-  /// «Vedi tutti» → Movimenti; «Analisi» → Analisi; «Collega una banca» → Conti;
-  /// «Vedi budget» → Budget.
+  /// «Vedi tutti» → Movimenti; «Analisi» → Analisi; «Collega una banca» → Conti.
   final VoidCallback? onShowAll;
   final VoidCallback? onShowAnalysis;
   final VoidCallback? onShowAccounts;
-  final VoidCallback? onShowBudget;
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
 class _HomeData {
-  _HomeData(this.accounts, this.summary, this.categories, this.days, this.budgetAlerts, this.alerts, this.toCategorize);
+  _HomeData(this.accounts, this.summary, this.categories, this.days, this.alerts, this.toCategorize);
   final List<Map<String, Object?>> accounts;
   final Map<String, int> summary;
   final List<Map<String, Object?>> categories;
   final List<(String?, List<Map<String, Object?>>)> days;
-  final List<budget.BudgetAlert> budgetAlerts;
   final List<ConsentAlert> alerts;
   final List<Map<String, Object?>> toCategorize;
 }
@@ -74,7 +70,6 @@ class _HomeScreenState extends State<HomeScreen> {
       await monthSummary(s.db, now),
       (await spendingByCategory(s.db, now)).take(6).toList(),
       groupByDay(await recentTransactions(s.db)),
-      await budget.alerts(s.db, now),
       await consentAlerts(s.db),
       await toCategorize(s.db),
     );
@@ -103,7 +98,6 @@ class _HomeScreenState extends State<HomeScreen> {
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
             children: [
               for (final a in data.alerts) ConsentBanner(alert: a),
-              for (final b in data.budgetAlerts) _BudgetBanner(alert: b, onShow: widget.onShowBudget),
               _hero(data, syncing),
               if (data.toCategorize.isNotEmpty) ...[const SizedBox(height: 16), _toCategorize(data.toCategorize)],
               const SizedBox(height: 16),
@@ -332,27 +326,6 @@ class _AccountCard extends StatelessWidget {
         Text(balance == null ? '—' : money(balance['amount_cents'] as int, balance['currency'] as String?),
             style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700)),
       ]),
-    );
-  }
-}
-
-class _BudgetBanner extends StatelessWidget {
-  const _BudgetBanner({required this.alert, this.onShow});
-  final budget.BudgetAlert alert;
-  final VoidCallback? onShow;
-
-  @override
-  Widget build(BuildContext context) {
-    final s = alert.status;
-    final over = s.state == budget.BudgetState.over;
-    final text = over
-        ? 'Budget ${alert.name}: superato di ${money(s.spent - s.limit)}'
-        : 'Budget ${alert.name}: usato il ${s.pct.round()}% (${money(s.spent)} di ${money(s.limit)})';
-    return NoticeBanner(
-      color: over ? AppColors.neg : AppColors.warn,
-      icon: Icons.track_changes,
-      text: text,
-      action: TextButton(onPressed: onShow, child: const Text('Vedi budget')),
     );
   }
 }

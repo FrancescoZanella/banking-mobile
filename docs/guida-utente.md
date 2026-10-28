@@ -2,15 +2,23 @@
 
 L'app (icona: banca bianca su viola) si apre con lo sblocco del telefono (impronta, volto o PIN) e si
 blocca da sola dopo 30 minuti senza tocchi. Se il telefono sembra avere i permessi di root, dopo lo
-sblocco compare un avviso (l'app resta utilizzabile). La barra in basso ha cinque voci: **Home, Analisi, Movimenti, Budget, Altro**
-(in Altro: Flussi, Categorie, Conti, Impostazioni).
+sblocco compare un avviso (l'app resta utilizzabile). La barra in basso ha cinque voci: **Home, Analisi, Movimenti, Flussi, Altro**
+(in Altro: Categorie, Conti, Impostazioni).
+
+**I dati partono dal 1 agosto 2026:** i movimenti precedenti non vengono scaricati né conservati, e
+grafici e confronti non vanno più indietro di quella data.
+
+**Giroconti** (soldi spostati tra i tuoi conti): **neutri sul totale, reali sul conto**. Guardando
+tutti i conti insieme (Home, Analisi, Flussi, Movimenti senza filtro) non contano né come entrate né
+come uscite; filtrando un solo conto in Movimenti contano, perché per quel conto i soldi sono davvero
+usciti o entrati. Restano visibili nell'elenco con l'etichetta «Giroconto» e in Flussi nel riquadro
+«Spostato tra i tuoi conti».
 
 ## Home
 
 - **Patrimonio totale** dei conti visibili e il saldo del mese (entrate meno uscite).
 - **Schede dei conti** scorrevoli in orizzontale.
-- **Avvisi:** consenso scaduto o in scadenza (con *Rinnova ora*) e budget all'80% o superati
-  (con *Vedi budget*).
+- **Avvisi:** consenso scaduto o in scadenza (con *Rinnova ora*).
 - **Questo mese:** speso finora, entrate e uscite; **Dove spendi questo mese:** le 6 categorie principali.
 - **Movimenti recenti** raggruppati per giorno. Tocca un movimento per il dettaglio.
 
@@ -41,43 +49,41 @@ batteria). Senza, le notifiche possono arrivare solo quando apri l'app.
 
 Conto, date, descrizione, IBAN della controparte (mascherato), codice esercente. Da qui puoi:
 
-- **cambiare la categoria** (o tornare ad *Automatica*);
+- **cambiare la categoria** (o tornare ad *Automatica*): nel menu le categorie sono ordinate dalla
+  più usata;
 - con *Applica a tutti i movimenti di «…»*, creare una **regola** che vale anche per i movimenti futuri;
 - vedere lo **storico con la stessa controparte**: quante volte, totale, da quando.
 
-Scegliere *Giroconti* segna il movimento come giroconto: resta visibile ma esce dai totali. Per i
-giroconti non si creano regole.
+Scegliere *Giroconti* segna il movimento come giroconto. Per i giroconti non si creano regole.
 
 ## Movimenti
 
 Ricerca per esercente o descrizione e **filtri** a chip: Conto, Categoria, Periodo (scorciatoie o
 intervallo dal/al), Tipo (entrate/uscite), Importo, Altro (conti nascosti). *Azzera filtri* li toglie
-tutti tranne la ricerca. In alto i totali, sotto i movimenti per giorno con il totale del giorno;
+tutti tranne la ricerca. In alto i totali, sotto i movimenti per giorno con il totale del giorno,
+dal più recente (le banche non danno l'ora: nello stesso giorno prima quelli arrivati per ultimi);
 *Mostra altri* allunga l'elenco. L'icona di condivisione esporta in **CSV** i movimenti filtrati.
 
 ## Analisi
 
-Settimana, mese o anno, con le frecce per spostarsi (non oltre il periodo in corso).
+Settimana, mese o anno, con le frecce per spostarsi (non oltre il periodo in corso, né prima di
+agosto 2026).
 
-- **Speso** e confronto con il periodo precedente **allo stesso giorno**.
+- **Speso** e confronto con il periodo precedente **allo stesso giorno** (non per agosto 2026: prima
+  non ci sono dati).
 - **Curva cumulata** del periodo sovrapposta a quella precedente.
-- **Ultimi 12 mesi:** tocca una barra per aprire quel mese.
+- **Spesa per mese** (da agosto 2026, al massimo 12 mesi): tocca una barra per aprire quel mese.
 - **Categorie:** tocca una categoria per vederne i movimenti; **Dove spendi di più:** gli esercenti.
 
-## Flussi (Altro → Flussi)
+## Flussi
 
-Mese o anno: entrate, uscite, risparmio e tasso di risparmio (con la media dei 12 mesi), grafico di
-entrate e uscite con la linea del risparmio, andamento del patrimonio e **da dove arrivano le entrate**,
-con quelle ricorrenti e la prossima prevista.
+Settimana, mese o anno, con le frecce per spostarsi:
 
-## Budget
-
-Un budget per il **totale del mese** e/o per singole categorie di spesa. Ogni budget mostra speso,
-limite, quanto resta e la previsione a fine mese; diventa arancione all'80% e rosso se superato.
-Per cambiarne l'importo, rimuovilo e aggiungilo di nuovo.
-
-**Abbonamenti:** uscite mensili simili allo stesso esercente (almeno 3). Il menu ⋮ permette di segnare
-*Non è un abbonamento*; gli esclusi si ripristinano dall'elenco in fondo.
+- entrate, uscite, risparmio e tasso di risparmio;
+- **uscite per categoria** ed **entrate per categoria**, con importo, numero di movimenti e quota del
+  totale; tocca una categoria per vederne i movimenti del periodo;
+- grafico di entrate e uscite per mese con la linea del risparmio, andamento del patrimonio;
+- **da dove arrivano le entrate**, con quelle ricorrenti e la prossima prevista.
 
 ## Categorie (Altro → Categorie)
 
@@ -126,8 +132,9 @@ storico che ogni banca concede (spesso ~90 giorni).
 **Perché un movimento è in «Altre spese»?** Nessuna regola l'ha riconosciuto. Apri il dettaglio, scegli
 la categoria e spunta *Applica a tutti i movimenti di «…»*: varrà anche per i prossimi.
 
-**Un giroconto tra i miei conti compare tra le spese.** I giroconti si riconoscono solo dall'IBAN dei
-tuoi conti o dal tuo nome. Se la banca non li indica, scegli *Giroconti* dal dettaglio del movimento.
+**Un giroconto tra i miei conti non risulta come giroconto.** I giroconti si riconoscono solo
+dall'IBAN dei tuoi conti o dal tuo nome. Se la banca non li indica, scegli *Giroconti* dal dettaglio del
+movimento.
 
 **Non arrivano movimenti nuovi.** Controlla in Conti lo stato del consenso (se scaduto: *Rinnova*) e lo
 *Storico sync*. Ogni conto si aggiorna al massimo ogni 12 ore, per il limite delle API PSD2.

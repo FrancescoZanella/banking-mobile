@@ -19,6 +19,10 @@ class AppConfig {
   static const backfillDays = 730;
   static const expiryWarningDays = 14;
 
+  /// I movimenti precedenti non si scaricano e non si conservano (scelta
+  /// dell'utente del 28/10/2026): tutti i dati partono da qui.
+  static const dataStart = '2026-08-01';
+
   /// Blocco dell'app dopo inattività (come il logout del web).
   static const idleLock = Duration(minutes: 30);
 

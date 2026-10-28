@@ -1,5 +1,6 @@
 import 'package:sqflite_common/sqlite_api.dart';
 
+import '../core/config.dart';
 import '../domain/categorize.dart';
 import 'defaults.dart';
 
@@ -133,6 +134,9 @@ Future<void> initDb(Database db) async {
     // I movimenti scaricati prima di questa funzione non vanno notificati.
     await db.rawUpdate("UPDATE transactions SET notified_at = 'prima'");
   }
+
+  // Niente dati prima della data di partenza (vedi AppConfig.dataStart).
+  await db.rawDelete('DELETE FROM transactions WHERE booking_date < ?', [AppConfig.dataStart]);
 
   final hasCategories = (await db.rawQuery('SELECT 1 FROM categories LIMIT 1')).isNotEmpty;
   if (!hasCategories) {

@@ -92,7 +92,9 @@ void main() {
     });
     tearDown(() => db.close());
 
-    testWidgets('la banca viene salvata subito, il messaggio compare dopo lo sblocco', (tester) async {
+    testWidgets("app bloccata: l'esito del ritorno compare solo dopo lo sblocco", (tester) async {
+      // Un ritorno rifiutato non avvia sincronizzazioni: il test resta semplice.
+      // Il salvataggio della banca a login riuscito è verificato in bank_test.
       final services = AppServices(
         db: db,
         secrets: MemorySecretStore(),
@@ -100,26 +102,18 @@ void main() {
         pickPem: () async => null,
         openBankPage: (url) async => true,
       );
-      final bank = BankService(db, api, services.sync);
-      await tester.runAsync(() => bank.connectNew('Banca Gamma'));
-      final state = api.started.single.$2;
-
       final auth = FakeAuth()..next = AuthOutcome.failed;
       final links = StreamController<Uri>();
       await tester.pumpWidget(BankingApp(services: services, lock: AppLock(auth), links: links.stream));
       await settle(tester);
-      links.add(Uri.parse('bankingmobile://callback?state=$state&code=abc'));
+      links.add(Uri.parse('bankingmobile://callback?state=sconosciuto&code=abc'));
       await settle(tester);
-      expect(await tester.runAsync(() => scalar(db, "SELECT count(*) FROM banks WHERE key = 'banca-gamma-it'")), 1);
-      expect(find.textContaining('collegata'), findsNothing); // ancora bloccata
+      expect(find.textContaining('rifiutato'), findsNothing); // ancora bloccata
 
       auth.next = AuthOutcome.success;
       await tester.tap(find.byKey(const Key('unlock')));
       await settle(tester);
-      expect(find.textContaining('Banca Gamma collegata: 1 conti'), findsOneWidget);
-      await settle(tester); // lascia finire il recupero dello storico partito dal collegamento
-      await tester.pumpWidget(const SizedBox()); // smonta l'app prima di chiudere il DB
-      await settle(tester);
+      expect(find.textContaining('Ritorno dalla banca rifiutato'), findsOneWidget);
       await links.close();
     });
 

@@ -255,7 +255,7 @@ class _TransactionDetailState extends State<_TransactionDetail> {
       const SizedBox(height: 6),
       Wrap(spacing: 8, children: [
         if (t['status'] == 'PDNG') const _Badge('In attesa'),
-        if (t['is_internal'] == 1) const _Badge('Giroconto · non conta nei totali'),
+        if (t['is_internal'] == 1) const _Badge('Giroconto · fuori dai totali di tutti i conti'),
       ]),
     ]);
   }
@@ -460,7 +460,8 @@ class PeriodBar extends StatelessWidget {
           key: const Key('period-prev'),
           tooltip: 'Periodo precedente',
           icon: const Icon(Icons.chevron_left),
-          onPressed: () => onChanged(previous(period)),
+          // Niente periodi interamente prima della data di partenza dei dati.
+          onPressed: period.start.isAfter(dataStartDay) ? () => onChanged(previous(period)) : null,
         ),
         Expanded(
           child: Text(period.label,

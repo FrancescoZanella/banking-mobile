@@ -112,7 +112,7 @@ void main() {
     expect(csv, contains('"\'=HYPERLINK(""http://x"")"'));
   });
 
-  test('giroconto scelto a mano: visibile ma fuori dai totali, nessuna regola', () async {
+  test('giroconto scelto a mano: neutro sul totale, reale sul suo conto, nessuna regola', () async {
     final acc = await addAccount(db);
     await storeTransactions(db, acc, [
       tx('500', ref: 'a', name: 'Ricarica', day: '2026-10-05'),
@@ -127,7 +127,10 @@ void main() {
 
     final page = await loadTransactions(db, const TxFilter(from: '2026-10-01', to: '2026-10-31'));
     expect(page.count, 2);
-    expect((page.spent, page.days.single.$3), (2000, -2000));
+    expect((page.spent, page.days.single.$3), (2000, -2000)); // tutti i conti: escluso
+    // Guardando solo quel conto il giroconto è un'uscita vera.
+    final own = await loadTransactions(db, TxFilter(account: acc, from: '2026-10-01', to: '2026-10-31'));
+    expect((own.spent, own.days.single.$3), (52000, -52000));
 
     await setCategory(db, '$acc|e|a', other);
     expect(await scalar(db, "SELECT is_internal FROM transactions WHERE id = '$acc|e|a'"), 0);

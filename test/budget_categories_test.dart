@@ -1,4 +1,4 @@
-// Parità con test_budget_page_and_forms, test_category_icons e la parte sulle
+// Parità con test_budget_page_and_forms (solo la logica: la pagina Budget è stata tolta), test_category_icons e la parte sulle
 // regole di test_manual_transfer_and_visibility (tests/test_web.py).
 import 'package:bankingmobile/app/services.dart';
 import 'package:bankingmobile/data/defaults.dart';
@@ -6,9 +6,7 @@ import 'package:bankingmobile/data/secure_store.dart';
 import 'package:bankingmobile/domain/budget.dart';
 import 'package:bankingmobile/domain/categories.dart';
 import 'package:bankingmobile/sync/sync.dart';
-import 'package:bankingmobile/ui/budget_screen.dart';
 import 'package:bankingmobile/ui/categories_screen.dart';
-import 'package:bankingmobile/ui/home_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
@@ -109,39 +107,6 @@ void main() {
     expect(await scalar(db, 'SELECT count(*) FROM category_rules WHERE category_id = ?', [sport]), 0);
     expect(await scalar(db, 'SELECT count(*) FROM budgets'), 0);
     expect(await scalar(db, 'SELECT category_id FROM transactions'), isNot(sport));
-  });
-
-  testWidgets('pagina Budget: aggiungi dal pannello, stato e rimuovi', (tester) async {
-    await tester.runAsync(() async {
-      final acc = await addAccount(db);
-      await storeTransactions(db, acc, [tx('400', ref: 'a', name: 'Esselunga', day: '2026-10-10')], '2026-01-01');
-    });
-    await pumpPage(tester, BudgetScreen(now: DateTime(2026, 10, 26)));
-    expect(find.text('Budget e abbonamenti'), findsOneWidget);
-    expect(find.text('Nessun budget ancora. Scegli una categoria e un importo mensile.'), findsOneWidget);
-
-    await tester.tap(find.byKey(const Key('add-budget')));
-    await settle(tester);
-    await tester.tap(find.byKey(const Key('budget-target')));
-    await settle(tester);
-    await tester.tap(find.text('Totale del mese').last);
-    await settle(tester);
-    await tester.enterText(find.byKey(const Key('budget-amount')), '450');
-    await tester.tap(find.byKey(const Key('budget-save')));
-    await settle(tester);
-
-    expect(find.text('Budget salvato.'), findsOneWidget);
-    expect(find.textContaining('Restano 50,00 €'), findsOneWidget); // 400 di 450: avviso (≥80%)
-    await tester.tap(find.text('rimuovi'));
-    await settle(tester);
-    await tester.tap(find.text('Rimuovi'));
-    await settle(tester);
-    expect(find.text('Nessun budget ancora. Scegli una categoria e un importo mensile.'), findsOneWidget);
-  });
-
-  testWidgets('Home: «Vedi budget» solo se un budget è al limite', (tester) async {
-    await pumpPage(tester, const HomeScreen());
-    expect(find.text('Vedi budget'), findsNothing);
   });
 
   testWidgets('pagina Categorie: tocco → cambio icona; regola verso Giroconti rifiutata', (tester) async {

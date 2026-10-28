@@ -1,4 +1,5 @@
-/// Aggregazioni per Home e Conti. Giroconti sempre esclusi da entrate/spese.
+/// Aggregazioni per Home e Conti. I giroconti sono neutri sui totali di tutti i
+/// conti insieme (i soldi restano tuoi); contano solo guardando un conto alla volta.
 library;
 
 import 'package:sqflite_common/sqlite_api.dart';
@@ -16,6 +17,10 @@ const spendSql = 'is_internal = 0 AND amount_cents < 0 AND $visibleSql';
 
 /// Entrate che contano: non giroconti, conti visibili.
 const incomeSql = 'is_internal = 0 AND amount_cents > 0 AND $visibleSql';
+
+/// Ordine dei movimenti: dal giorno più recente; nello stesso giorno (le banche
+/// non danno l'ora) prima quelli scaricati per ultimi.
+const txOrder = 't.booking_date DESC, t.created_at DESC, t.rowid DESC';
 
 (String, String) monthBounds(DateTime month) {
   final start = DateTime.utc(month.year, month.month);
@@ -155,7 +160,7 @@ const txSelect =
 Future<List<Map<String, Object?>>> recentTransactions(DatabaseExecutor db, {int limit = 40}) =>
     db.rawQuery(
       '$txSelect WHERE a.hidden = 0 '
-      'ORDER BY t.booking_date DESC, t.created_at DESC, t.id LIMIT ?',
+      'ORDER BY $txOrder LIMIT ?',
       [limit],
     );
 
@@ -187,7 +192,7 @@ Future<(Map<String, Object?>?, TransactionHistory?)> transactionDetail(
   final counterparty = tx['counterparty'] as String?;
   if (counterparty == null || counterparty.isEmpty) return (tx, null);
   final same = await db.rawQuery(
-    '$txSelect WHERE lower(t.counterparty) = lower(?) ORDER BY t.booking_date DESC, t.id',
+    '$txSelect WHERE lower(t.counterparty) = lower(?) ORDER BY $txOrder',
     [counterparty],
   );
   return (

@@ -74,6 +74,9 @@ void main() {
     await tester.tap(find.byKey(const Key('period-prev')));
     await settle(tester);
     expect(label(tester), 'agosto 2026');
+    // Primo mese dei dati: niente confronto con luglio e niente freccia indietro.
+    expect(find.byKey(const Key('no-comparison')), findsOneWidget);
+    expect(tester.widget<IconButton>(find.byKey(const Key('period-prev'))).onPressed, isNull);
     expect(nextEnabled(tester), isTrue);
 
     for (final (kind, expected) in [('Settimana', '27 luglio – 2 agosto 2026'), ('Anno', '2026'), ('Mese', 'gennaio 2026')]) {
@@ -93,7 +96,7 @@ void main() {
     expect(find.text('3'), findsOneWidget); // tre movimenti della categoria nell'anno
   });
 
-  testWidgets('Flussi: solo mese e anno, totali, tasso di risparmio, entrate ricorrenti', (tester) async {
+  testWidgets('Flussi: settimana, mese e anno, totali, categorie, entrate ricorrenti', (tester) async {
     await tester.runAsync(() async {
       final acc = await addAccount(db);
       await storeTransactions(db, acc, [
@@ -104,13 +107,28 @@ void main() {
     });
     await pumpPage(tester, FlowsScreen(now: now));
     expect(find.text('Entrate e flusso di cassa'), findsOneWidget);
-    expect(find.text('Settimana'), findsNothing); // la settimana non c'è nei flussi
+    expect(find.text('Settimana'), findsOneWidget); // ora anche la settimana
     expect(find.text('Mese'), findsOneWidget);
     expect(find.text('Entrate finora'), findsOneWidget);
     expect(tester.widget<Text>(find.byKey(const Key('saved'))).data, '+750,00 €');
     expect(tester.widget<Text>(find.byKey(const Key('savings-rate'))).data, '75%');
     expect(find.textContaining('Ricorrente · ogni mese · prossima ~'), findsOneWidget);
     expect(nextEnabled(tester), isFalse);
+
+    // Uscite ed entrate del mese divise per categoria.
+    final expense = find.byKey(const Key('expense-by-category'));
+    final income = find.byKey(const Key('income-by-category'));
+    expect(find.descendant(of: expense, matching: find.byKey(const Key('flow-out-none'))), findsOneWidget);
+    expect(find.descendant(of: expense, matching: find.text('250,00 €')), findsWidgets);
+    expect(find.descendant(of: income, matching: find.text('1.000,00 €')), findsWidgets);
+
+    // Tocco su una categoria → i suoi movimenti del periodo.
+    await tester.tap(find.byKey(const Key('flow-out-none')));
+    await settle(tester);
+    expect(find.byType(TransactionsScreen), findsOneWidget);
+    expect(find.text('Esselunga'), findsOneWidget);
+    await tester.pageBack();
+    await settle(tester);
 
     await tester.tap(find.text('Anno'));
     await settle(tester);

@@ -4,7 +4,7 @@
 
 App Android personale, scritta in Flutter, che legge i conti tramite le API PSD2 (AIS) di
 [Enable Banking](https://enablebanking.com) e li analizza: patrimonio, movimenti, spese per categoria,
-flussi di cassa, budget e abbonamenti. È la versione per telefono della dashboard web
+flussi di cassa per categoria. È la versione per telefono della dashboard web
 (`banking-dashboard`): **per l'utente funziona allo stesso modo**, ma non serve accendere il PC.
 
 | | |
@@ -17,16 +17,18 @@ flussi di cassa, budget e abbonamenti. È la versione per telefono della dashboa
 
 ## Cosa fa
 
-- **Home:** patrimonio totale, schede dei conti, avvisi su consensi e budget, spese del mese, ultimi
+- **Home:** patrimonio totale, schede dei conti, avvisi sui consensi, spese del mese, ultimi
   movimenti raggruppati per giorno.
 - **Movimenti:** ricerca, filtri (conto, categoria, periodo, tipo, importo), totali, export CSV.
   Dal dettaglio di un movimento si cambia la categoria, anche con una regola per i movimenti futuri.
 - **Analisi:** settimana, mese o anno, confronto con il periodo precedente allo stesso giorno, curva
   cumulata, ultimi 12 mesi, categorie ed esercenti.
 - **Flussi:** entrate, uscite, risparmio e tasso di risparmio, andamento del patrimonio, entrate ricorrenti.
-- **Budget e abbonamenti:** limiti mensili con previsione a fine mese, abbonamenti riconosciuti in automatico.
+- **Flussi:** entrate e uscite per categoria nel periodo scelto (settimana, mese, anno).
 - **Categorie e regole:** icone, colori, regole per testo o codice esercente (MCC).
-- **Giroconti** tra i tuoi conti riconosciuti dall'IBAN o dal tuo nome: visibili, ma esclusi dai totali.
+- **Giroconti** tra i tuoi conti riconosciuti dall'IBAN o dal tuo nome: fuori dai totali di tutti i conti,
+  contati quando guardi un conto solo.
+- **Dati dal 1 agosto 2026:** i movimenti precedenti non vengono scaricati né conservati.
 - **Notifiche dei movimenti da categorizzare:** per ogni movimento nuovo che le regole non riconoscono;
   il tocco apre il dettaglio per scegliere la categoria.
 
@@ -47,7 +49,7 @@ Dettagli, prove e rischi residui in [docs/sicurezza.md](docs/sicurezza.md).
 
 | Documento | Per chi | Contenuto |
 |---|---|---|
-| [Guida all'uso](docs/guida-utente.md) | chi la usa | pagine, banche e consensi, sincronizzazione, categorie, budget, domande frequenti |
+| [Guida all'uso](docs/guida-utente.md) | chi la usa | pagine, banche e consensi, sincronizzazione, categorie, domande frequenti |
 | [Installazione](docs/installazione.md) | chi la installa o la aggiorna | ambiente, chiave di firma, build di release, primo avvio, aggiornamenti |
 | [Architettura](docs/architettura.md) | chi modifica il codice | moduli, flussi, dati, codice nativo, differenze dal web |
 | [Sviluppo](docs/sviluppo.md) | chi modifica il codice | struttura della repo, test, versioni fissate, cosa non va mai su GitHub |

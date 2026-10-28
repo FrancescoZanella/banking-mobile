@@ -112,7 +112,8 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
       delta: spent - await analysis.totalSpend(db, cmpStart, cmpEnd),
       categories: await analysis.categories(db, period.start, until, cmpStart, cmpEnd),
       merchants: await analysis.topMerchants(db, period.start, until),
-      bars: await analysis.monthlyBars(db, barsEnd(period, now)),
+      // Barre dal mese di partenza dei dati, al massimo 12 mesi.
+      bars: await analysis.monthlyBars(db, barsEnd(period, now), n: monthsFromStart(barsEnd(period, now))),
       current: await analysis.cumulative(db, period, until),
       previous: await analysis.cumulative(db, prev, prev.end),
       alerts: await consentAlerts(db),
@@ -173,6 +174,8 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
     };
     final sameDay = current ? ' allo stesso giorno' : '';
     final delta = d.delta;
+    // Prima del 1 agosto 2026 non ci sono dati: niente confronto con un periodo vuoto.
+    final compare = comparisonAvailable(p);
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -182,7 +185,10 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
               key: const Key('analysis-spent'),
               style: const TextStyle(fontSize: 32, fontWeight: FontWeight.w700, letterSpacing: -1)),
           const SizedBox(height: 4),
-          if (delta == 0)
+          if (!compare)
+            const Text('Nessun confronto: i dati partono dal 1 agosto 2026',
+                key: Key('no-comparison'), style: TextStyle(color: AppColors.muted))
+          else if (delta == 0)
             Text('Uguale rispetto ${prev.versus}$sameDay', style: const TextStyle(color: AppColors.muted))
           else
             Row(children: [
@@ -200,7 +206,7 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
           CumulativeChart(
             labels: axisLabels(p),
             current: d.current,
-            previous: d.previous,
+            previous: compare ? d.previous : const [],
             currentLabel: p.label,
             previousLabel: prev.label,
           ),
@@ -216,7 +222,7 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          const Text('Ultimi 12 mesi', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600)),
+          const Text('Spesa per mese', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600)),
           Text('Media ${money(average.round())} al mese · tocca una barra per aprire il mese',
               style: const TextStyle(color: AppColors.muted, fontSize: 13)),
           const SizedBox(height: 14),
@@ -233,6 +239,7 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
 
   Widget _categories(_AnalysisData d) {
     final prev = previous(_period);
+    final compare = comparisonAvailable(_period);
     final from = iso(_period.start), to = iso(addDays(_period.end, -1));
     return Card(
       child: Padding(
@@ -287,6 +294,7 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
                           child: Text('${c.pct.round()}% del totale',
                               style: const TextStyle(color: AppColors.muted, fontSize: 12)),
                         ),
+                        if (compare)
                         Text(
                           c.delta == 0
                               ? 'uguale vs ${prev.short}'

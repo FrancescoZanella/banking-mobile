@@ -26,7 +26,7 @@ final _doubtful = 'a.hidden = 0 AND t.is_internal = 0 '
 /// Per il riquadro in Home: i dubbi dell'ultimo mese, dal più recente.
 Future<List<Map<String, Object?>>> toCategorize(DatabaseExecutor db, {DateTime? now}) => db.rawQuery(
       '$txSelect WHERE $_doubtful AND t.booking_date >= ? '
-      'ORDER BY t.booking_date DESC, t.id',
+      'ORDER BY $txOrder',
       [iso(addDays(today(now), -boxDays))],
     );
 

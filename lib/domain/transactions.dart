@@ -146,13 +146,13 @@ class TxFilter {
   if (!f.hidden) where.add('a.hidden = 0');
 
   final sql = where.isEmpty ? txSelect : '$txSelect WHERE ${where.join(' AND ')}';
-  return ('$sql ORDER BY t.booking_date DESC, t.id', params);
+  return ('$sql ORDER BY $txOrder', params);
 }
 
 class TxPage {
   const TxPage(this.days, this.count, this.spent, this.received, this.shown);
 
-  /// (giorno, movimenti, totale del giorno senza giroconti).
+  /// (giorno, movimenti, totale del giorno; giroconti solo filtrando un conto).
   final List<(String?, List<Map<String, Object?>>, int)> days;
   final int count;
   final int spent;
@@ -165,10 +165,12 @@ class TxPage {
 /// Una «pagina» della lista: i primi [page] × [pageSize] movimenti e i totali.
 Future<TxPage> loadTransactions(DatabaseExecutor db, TxFilter f, {int page = 1, DateTime? now}) async {
   final (sql, params) = buildQuery(f, now);
+  // Giroconti: neutri sui totali di tutti i conti, reali guardando un conto solo.
+  final internal = f.account != null ? '' : ' AND is_internal = 0';
   final summary = (await db.rawQuery(
     'SELECT count(*) AS n, '
-    'coalesce(-sum(CASE WHEN amount_cents < 0 AND is_internal = 0 THEN amount_cents END), 0) AS spent, '
-    'coalesce(sum(CASE WHEN amount_cents > 0 AND is_internal = 0 THEN amount_cents END), 0) AS received '
+    'coalesce(-sum(CASE WHEN amount_cents < 0$internal THEN amount_cents END), 0) AS spent, '
+    'coalesce(sum(CASE WHEN amount_cents > 0$internal THEN amount_cents END), 0) AS received '
     'FROM ($sql)',
     params,
   ))
@@ -177,7 +179,13 @@ Future<TxPage> loadTransactions(DatabaseExecutor db, TxFilter f, {int page = 1, 
   return TxPage(
     [
       for (final (day, items) in groupByDay(rows))
-        (day, items, items.where((t) => t['is_internal'] != 1).fold(0, (s, t) => s + (t['amount_cents'] as int))),
+        (
+          day,
+          items,
+          items
+              .where((t) => f.account != null || t['is_internal'] != 1)
+              .fold(0, (s, t) => s + (t['amount_cents'] as int)),
+        ),
     ],
     summary['n'] as int,
     summary['spent'] as int,
@@ -230,8 +238,11 @@ Future<List<Map<String, Object?>>> filterAccounts(DatabaseExecutor db) => db.raw
       'FROM accounts a JOIN banks b ON b.key = a.bank_key ORDER BY b.label, a.id',
     );
 
-Future<List<Map<String, Object?>>> allCategories(DatabaseExecutor db) =>
-    db.rawQuery('SELECT * FROM categories ORDER BY kind, name');
+/// Categorie dalla più usata alla meno usata (menu del dettaglio e filtro).
+Future<List<Map<String, Object?>>> allCategories(DatabaseExecutor db) => db.rawQuery(
+      'SELECT c.*, (SELECT count(*) FROM transactions t WHERE t.category_id = c.id) AS uses '
+      'FROM categories c ORDER BY uses DESC, c.name',
+    );
 
 /// Evita formule eseguite da Excel (CSV injection) da descrizioni bancarie.
 String _csvSafe(String? value) {
