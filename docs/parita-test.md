@@ -15,7 +15,7 @@ comportamento per l'utente. Stato: ✅ portato e verde · ⏳ fase successiva ·
 | test_save_session_reuses_account_without_iban | `save session reuses account without iban` | ✅ |
 | test_consent_valid_until_uses_bank_maximum | `consent valid until uses bank maximum` | ✅ |
 | test_consent_error_detection | `consent error detection` | ✅ |
-| test_db_is_encrypted | `integration_test/db_encryption_test.dart` (SQLCipher sul telefono: senza chiave e con chiave errata illeggibile, testo assente dal file) | ✅ scritto, da eseguire sul telefono |
+| test_db_is_encrypted | `integration_test/db_encryption_test.dart` (SQLCipher sul telefono: senza chiave e con chiave errata illeggibile, testo assente dal file) | ✅ eseguito sul telefono (28/10/2026) |
 | test_is_due_respects_interval | `is_due respects interval` | ✅ |
 | test_same_iban_different_currencies_are_separate_accounts | `same iban different currencies are separate accounts` | ✅ |
 | test_migration_adds_hidden_column | `migration adds hidden column` | ✅ |

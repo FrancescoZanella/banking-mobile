@@ -1,0 +1,60 @@
+# Architettura
+
+L'app è autonoma: **nessun server e nessuna porta aperta**. Tutto sta sul telefono e l'unica
+connessione è in uscita verso `https://api.enablebanking.com`. La logica è la stessa della versione
+web (`banking-dashboard/app/`), riscritta in Dart; i test di [parità](parita-test.md) garantiscono che
+il risultato coincida.
+
+## Moduli
+
+```
+lib/
+  main.dart            avvio: DB cifrato, Keystore, sblocco, deep link, sync in background
+  app/                 app.dart (blocco, deep link, MaterialApp), services.dart (dipendenze iniettabili)
+  core/                money (centesimi, formato €), dates (date di calendario UTC), periods, config
+  data/                database (schema, migrazioni), defaults (categorie, icone, regole),
+                       secure_database (SQLCipher), secure_store (Keystore, credenziali)
+  bank/                enable_banking (JWT RS256, API), consent (stato monouso), bank_service
+                       (collega, rinnova, scollega, elimina, ritorno dalla banca, SyncRunner)
+  sync/                sync (normalizza, deduplica, PDNG, storico/incrementale, is_due),
+                       background (WorkManager ogni ~12 h, notifiche di scadenza)
+  domain/              categorize, reports, analysis, cashflow, budget, transactions, categories
+  security/            app_lock (sblocco biometrico, 30 minuti di inattività)
+  ui/                  una schermata per pagina + widgets (feed, dettaglio, avvisi, periodo) e charts
+```
+
+Le schermate leggono il DB direttamente tramite le funzioni di `domain/` e si ricaricano quando
+`SyncRunner` notifica un cambiamento (sincronizzazione, banca collegata, categoria cambiata).
+
+## Flussi principali
+
+**Collegamento di una banca**
+1. Conti → Collega banca: il nome scelto viene validato contro il catalogo di Enable Banking.
+2. `bank_service` crea uno `state` casuale (32 byte, monouso, scade in 20 minuti) e ottiene
+   l'indirizzo di login; la pagina si apre in una Custom Tab effimera (incognito).
+3. La banca rimanda alla relay `https://francescozanella.github.io/Bankrelay/app`, che grazie all'App
+   Link verificato riapre direttamente l'app (in alternativa rimanda a `bankingmobile://callback`).
+4. L'app accetta il ritorno solo con uno `state` valido, crea la sessione, salva banca e conti e
+   avvia il recupero dello storico.
+
+**Sincronizzazione**
+- All'apertura (dopo lo sblocco) e da WorkManager ogni ~12 ore, solo per i conti "scaduti".
+- Saldi e movimenti vengono normalizzati in centesimi interi, deduplicati con una chiave stabile; i
+  movimenti in attesa (PDNG) vengono sostituiti da quelli contabilizzati.
+- Dopo ogni sincronizzazione: riconoscimento dei giroconti (solo IBAN dei tuoi conti o tuo nome) e
+  categorizzazione con le regole.
+
+## Dati
+
+Database SQLCipher nella memoria privata dell'app; la chiave (256 bit casuali) è nel Keystore,
+utilizzabile anche senza sblocco per permettere la sincronizzazione in background. Le tabelle sono le
+stesse del web: `banks`, `consents`, `accounts`, `balances`, `transactions`, `categories`,
+`category_rules`, `budgets`, `subscription_ignores`, `pending_auth`, `sync_runs`, `settings`.
+
+## Differenze volute rispetto al web
+
+- Sblocco biometrico al posto di password, setup e "Cambia password".
+- Sincronizzazione anche in background, con notifica dei consensi in scadenza.
+- Barra di navigazione "5 + Altro"; dettaglio del movimento e filtri come pannelli dal basso.
+- Export CSV con la condivisione di Android.
+- Colore delle categorie scelto da una tavolozza invece del selettore libero.

@@ -1,8 +1,21 @@
+import java.io.File
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("kotlin-android")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
+}
+
+// Chiave di firma fuori dalla repo (%LOCALAPPDATA%\BankingMobile\signing), come i
+// dati della versione web. BANKING_MOBILE_KEY_PROPERTIES può indicarne un'altra.
+val keyPropertiesFile = File(
+    System.getenv("BANKING_MOBILE_KEY_PROPERTIES")
+        ?: "${System.getenv("LOCALAPPDATA")}/BankingMobile/signing/key.properties"
+)
+val keyProperties = Properties().apply {
+    if (keyPropertiesFile.isFile) keyPropertiesFile.inputStream().use { load(it) }
 }
 
 android {
@@ -23,10 +36,7 @@ android {
     }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
         applicationId = "com.francescozanella.bankingmobile"
-        // You can update the following values to match your application needs.
-        // For more information, see: https://flutter.dev/to/review-gradle-config.
         // Android 9+: BiometricPrompt e Keystore moderno.
         minSdk = 28
         targetSdk = flutter.targetSdkVersion
@@ -34,17 +44,38 @@ android {
         versionName = flutter.versionName
     }
 
+    signingConfigs {
+        create("release") {
+            if (keyProperties.isEmpty) return@create
+            storeFile = file(keyProperties.getProperty("storeFile"))
+            storePassword = keyProperties.getProperty("storePassword")
+            keyAlias = keyProperties.getProperty("keyAlias")
+            keyPassword = keyProperties.getProperty("keyPassword")
+        }
+    }
+
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = signingConfigs.getByName("release")
+            // R8: codice ridotto e offuscato, risorse inutili rimosse.
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
     }
 }
 
 flutter {
     source = "../.."
+}
+
+// Mai una release firmata con la chiave di debug: senza chiave la build si ferma.
+tasks.matching { it.name.startsWith("assemble") || it.name.startsWith("bundle") }.configureEach {
+    if (name.contains("Release")) {
+        doFirst {
+            if (keyProperties.isEmpty) throw GradleException("Chiave di firma non trovata: ${keyPropertiesFile.path}")
+        }
+    }
 }
 
 dependencies {
