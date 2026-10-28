@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 
 import 'accounts_screen.dart';
+import 'home_screen.dart';
 import 'settings_screen.dart';
 import 'theme.dart';
+import 'transactions_screen.dart';
 
 /// Struttura dell'app: barra in basso con 5 voci (Home, Analisi, Movimenti,
-/// Budget, Altro). Le pagine arrivano nelle fasi successive.
+/// Budget, Altro). Analisi e Budget arrivano nelle fasi successive.
 class Shell extends StatefulWidget {
   const Shell({super.key});
 
@@ -27,9 +29,14 @@ class _ShellState extends State<Shell> {
   @override
   Widget build(BuildContext context) {
     final pages = [
-      const ComingSoon(title: 'Home', phase: 4),
+      HomeScreen(
+        onShowAll: () => setState(() => _index = 2),
+        onShowAnalysis: () => setState(() => _index = 1),
+        onShowAccounts: () =>
+            Navigator.of(context).push(MaterialPageRoute(builder: (_) => const AccountsScreen())),
+      ),
       const ComingSoon(title: 'Analisi spese', phase: 5),
-      const ComingSoon(title: 'Movimenti', phase: 4),
+      const TransactionsScreen(),
       const ComingSoon(title: 'Budget', phase: 6),
       const MorePage(),
     ];

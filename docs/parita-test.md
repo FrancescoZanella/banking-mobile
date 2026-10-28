@@ -61,7 +61,7 @@ comportamento per l'utente. Stato: ✅ portato e verde · ⏳ fase successiva ·
 | test_change_password | ➖ niente password (sblocco biometrico/PIN, scelta di progetto) | ➖ |
 | test_auth_pages_have_no_sidebar | `bloccata: … nessuna NavigationBar` | ✅ |
 | test_callback_with_unknown_state_is_refused | `bank_test: ritorno con state sconosciuto, già usato o con schema estraneo` + `deep link di ritorno: esito mostrato` | ✅ |
-| test_manual_category_creates_rule | cambio categoria dal dettaglio con regola | ⏳ fase 4 |
+| test_manual_category_creates_rule | `transactions_test: categoria a mano con regola` (il `back` verso siti esterni non esiste: il dettaglio è un pannello che si chiude) | ✅ |
 | test_connect_shows_bank_page_instead_of_redirect | `bank_test: banca nuova salvata solo dopo il login` (restituisce l'URL https della banca, aperto in Custom Tab) | ✅ |
 | test_accounts_page_lists_catalog_in_dropdown | `bank_test: catalogo nel menu, in ordine` | ✅ |
 | test_accounts_page_survives_catalog_error | `bank_test: … errore del catalogo → null` (avviso «Elenco banche non disponibile») | ✅ |
@@ -73,17 +73,17 @@ comportamento per l'utente. Stato: ✅ portato e verde · ⏳ fase successiva ·
 | test_renewal_without_accounts_keeps_existing_link | `bank_test: rinnovo a vuoto non sgancia i conti` | ✅ |
 | test_disconnect_revokes_and_keeps_history | `bank_test: scollega: revoca il consenso e tiene lo storico` | ✅ |
 | test_delete_bank_requires_exact_name | `bank_test: elimina solo scrivendo il nome esatto, e solo quella banca` | ✅ |
-| test_hidden_account_excluded_from_totals_and_list | conto nascosto escluso da totali ed elenco | ⏳ fase 4 |
-| test_home_feed_and_detail_panel | Home: feed e dettaglio | ⏳ fase 4 |
+| test_hidden_account_excluded_from_totals_and_list | `transactions_test: conto nascosto escluso dai totali e dalla lista` | ✅ |
+| test_home_feed_and_detail_panel | `transactions_test: Home: patrimonio, feed per giorno, dettaglio con lo storico` (i nomi sono testo, mai HTML: niente escape da verificare; id inesistente → «Movimento non trovato.») | ✅ |
 | test_detail_requires_login | `bloccata: nessuna pagina con dati costruita` (vale per ogni schermata, dettaglio incluso) | ✅ |
-| test_category_change_from_home_returns_home | cambio categoria dalla Home resta in Home | ⏳ fase 4 |
+| test_category_change_from_home_returns_home | `transactions_test: cambio categoria dal dettaglio: si resta in Home` | ✅ |
 | test_analysis_page_periods | Analisi: tutti i periodi | ⏳ fase 5 |
 | test_flows_page | Flussi | ⏳ fase 5 |
 | test_budget_page_and_forms | Budget: pagina e moduli | ⏳ fase 6 |
 | test_category_icons | Categorie: icone | ⏳ fase 6 |
-| test_transactions_periods_and_grouping | Movimenti: periodi e raggruppamento | ⏳ fase 4 |
+| test_transactions_periods_and_grouping | `transactions_test: periodi, raggruppamento…, CSV` + `Movimenti: chip attivi, «Azzera filtri», totali e gruppi per giorno` (CSV condiviso con Android) | ✅ |
 | test_accounts_page_states | `bank_test: pagina Conti: stati dei consensi, conto nascosto, azioni` | ✅ |
-| test_manual_transfer_and_visibility | giroconto manuale e visibilità | ⏳ fase 4 |
+| test_manual_transfer_and_visibility | `transactions_test: giroconto scelto a mano` (la parte sulle regole verso Giroconti nella pagina Categorie arriva in fase 6) | ✅ / ⏳ fase 6 |
 
 ## Solo mobile (sicurezza)
 | Controllo | Test | Stato |

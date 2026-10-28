@@ -103,7 +103,7 @@ void main() {
     testWidgets('bloccata: solo la schermata di sblocco, nessuna pagina con dati', (tester) async {
       final auth = FakeAuth()..next = AuthOutcome.failed;
       await tester.pumpWidget(BankingApp(services: services, lock: AppLock(auth)));
-      await tester.pumpAndSettle();
+      await settle(tester);
       expect(find.byType(LockScreen), findsOneWidget);
       expect(find.byType(Shell), findsNothing);
       expect(find.byType(NavigationBar), findsNothing);
@@ -111,7 +111,7 @@ void main() {
 
       auth.next = AuthOutcome.success;
       await tester.tap(find.byKey(const Key('unlock')));
-      await tester.pumpAndSettle();
+      await settle(tester);
       expect(find.byType(Shell), findsOneWidget);
       for (final label in ['Home', 'Analisi', 'Movimenti', 'Budget', 'Altro']) {
         expect(find.text(label), findsWidgets);
@@ -123,37 +123,37 @@ void main() {
       final auth = FakeAuth();
       final lock = AppLock(auth, clock: () => now);
       await tester.pumpWidget(BankingApp(services: services, lock: lock));
-      await tester.pumpAndSettle();
+      await settle(tester);
       expect(find.byType(Shell), findsOneWidget);
       // Al blocco la schermata chiede subito l'impronta: qui viene negata.
       auth.next = AuthOutcome.failed;
       now = now.add(const Duration(minutes: 31));
       lock.checkIdle();
-      await tester.pumpAndSettle();
+      await settle(tester);
       expect(find.byType(Shell), findsNothing);
       expect(find.byType(LockScreen), findsOneWidget);
     });
 
     testWidgets('Altro → Impostazioni: credenziali salvate solo nel Keystore', (tester) async {
       await tester.pumpWidget(BankingApp(services: services, lock: AppLock(FakeAuth())));
-      await tester.pumpAndSettle();
+      await settle(tester);
       await tester.tap(find.text('Altro').last);
-      await tester.pumpAndSettle();
+      await settle(tester);
       for (final label in ['Flussi', 'Categorie', 'Conti', 'Impostazioni']) {
         expect(find.text(label), findsOneWidget);
       }
       await tester.tap(find.text('Impostazioni'));
-      await tester.pumpAndSettle();
+      await settle(tester);
 
       await tester.tap(find.byKey(const Key('save-credentials')));
-      await tester.pumpAndSettle();
+      await settle(tester);
       expect(find.text('Scegli il file .pem della chiave privata.'), findsOneWidget);
 
       await tester.enterText(find.byKey(const Key('app-id')), '12345678-9abc-4def-8123-456789abcdef');
       await tester.tap(find.byKey(const Key('pick-pem')));
-      await tester.pumpAndSettle();
+      await settle(tester);
       await tester.tap(find.byKey(const Key('save-credentials')));
-      await tester.pumpAndSettle();
+      await settle(tester);
       final creds = await readCredentials(secrets);
       expect((creds?.appId, creds?.privateKeyPem), ('12345678-9abc-4def-8123-456789abcdef', testPem));
       expect(find.textContaining('cancella il file .pem'), findsOneWidget);

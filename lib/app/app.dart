@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 
 import '../bank/bank_service.dart';
 import '../security/app_lock.dart';
@@ -82,6 +83,10 @@ class _BankingAppState extends State<BankingApp> with WidgetsBindingObserver {
         title: 'Banking Dashboard',
         debugShowCheckedModeBanner: false,
         theme: buildTheme(),
+        // Testi di sistema (selettore date, menu) in italiano.
+        locale: const Locale('it'),
+        supportedLocales: const [Locale('it')],
+        localizationsDelegates: GlobalMaterialLocalizations.delegates,
         scaffoldMessengerKey: _messenger,
         home: ListenableBuilder(
           listenable: widget.lock,

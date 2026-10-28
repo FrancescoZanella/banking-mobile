@@ -4,6 +4,7 @@ library;
 
 import 'package:bankingmobile/core/dates.dart';
 import 'package:bankingmobile/data/database.dart';
+import 'package:flutter_test/flutter_test.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 const bankLabels = {'zeta': 'Zeta', 'theta': 'ThetaBank'};
@@ -75,3 +76,12 @@ Map<String, dynamic> tx(String amount,
 
 Future<Object?> scalar(DatabaseExecutor db, String sql, [List<Object?>? args]) async =>
     (await db.rawQuery(sql, args)).first.values.first;
+
+/// Al posto di pumpAndSettle: le pagine leggono il DB con I/O reale (fuori dal
+/// tempo simulato) e intanto mostrano un indicatore che non si ferma mai.
+Future<void> settle(WidgetTester tester) async {
+  for (var i = 0; i < 8; i++) {
+    await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 30)));
+    await tester.pump(const Duration(milliseconds: 300));
+  }
+}

@@ -277,7 +277,7 @@ void main() {
       openBankPage: (url) async => true,
     );
     await tester.pumpWidget(BankingApp(services: services, lock: AppLock(FakeAuth()), links: links.stream));
-    await tester.pumpAndSettle();
+    await settle(tester);
     await tester.runAsync(() async {
       links.add(Uri.parse('bankingmobile://callback?state=sconosciuto&code=x'));
       await Future<void>.delayed(const Duration(milliseconds: 300));
