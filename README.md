@@ -10,6 +10,7 @@ ma non serve accendere il PC.
 | [Installazione](docs/installazione.md) | chi la installa o la aggiorna | ambiente, chiave di firma, build di release, primo avvio, aggiornamenti, ripristino |
 | [Guida all'uso](docs/guida-utente.md) | chi la usa | pagine, banche e consensi, sincronizzazione, categorie, budget |
 | [Architettura](docs/architettura.md) | chi modifica il codice | moduli, flussi, dati, differenze dal web |
+| [Sicurezza](docs/sicurezza.md) | tutti | audit OWASP MASVS, protezioni, prove sul telefono, rischi residui |
 | [Sviluppo](docs/sviluppo.md) | chi modifica il codice | test, versioni fissate, telefono di prova, convenzioni |
 | [Parità dei test](docs/parita-test.md) | chi modifica il codice | ogni test del web e il suo corrispondente qui |
 

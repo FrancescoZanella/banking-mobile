@@ -24,6 +24,7 @@ Future<void> main() async {
     api: EnableBankingClient(() => readCredentials(secrets)),
     pickPem: _pickPem,
     openBankPage: _openBankPage,
+    isDeviceRooted: _isDeviceRooted,
   );
   await initNotifications(requestPermission: true);
   await scheduleBackgroundSync();
@@ -35,13 +36,19 @@ Future<void> main() async {
   ));
 }
 
-/// Selettore di sistema: legge il .pem una volta, senza copiarlo altrove.
+/// Selettore di sistema: legge il .pem una volta e ne cancella la copia temporanea.
 Future<PickedFile?> _pickPem() async {
-  final result = await FilePicker.pickFiles(type: FileType.any, withData: true);
-  final file = result?.files.singleOrNull;
-  final bytes = file?.bytes;
-  if (file == null || bytes == null || bytes.length > 16 * 1024) return null;
-  return (name: file.name, content: utf8.decode(bytes));
+  try {
+    final result = await FilePicker.pickFiles(type: FileType.any, withData: true);
+    final file = result?.files.singleOrNull;
+    final bytes = file?.bytes;
+    if (file == null || bytes == null || bytes.length > 16 * 1024) return null;
+    return (name: file.name, content: utf8.decode(bytes));
+  } finally {
+    // Il selettore copia il file nella cache dell'app: la chiave privata non deve
+    // restare lì in chiaro (vive solo nel Keystore).
+    await FilePicker.clearTemporaryFiles();
+  }
 }
 
 const _customTabs = MethodChannel('bankingmobile/custom_tabs');
@@ -58,4 +65,13 @@ Future<bool> _openBankPage(Uri url) async {
     // ripiego sotto
   }
   return launchUrl(url, mode: LaunchMode.inAppBrowserView);
+}
+
+/// Indizi di root dal codice nativo; in caso di errore nessun avviso.
+Future<bool> _isDeviceRooted() async {
+  try {
+    return await const MethodChannel('bankingmobile/device').invokeMethod<bool>('isRooted') ?? false;
+  } on PlatformException {
+    return false;
+  }
 }

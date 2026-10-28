@@ -1,7 +1,7 @@
 # Parità dei test con la versione web
 
 Ogni test di `banking-dashboard/tests/` ha un corrispondente qui, che verifica lo stesso
-comportamento per l'utente. Stato: ✅ portato e verde · ⏳ fase successiva · ➖ non applicabile (motivo indicato).
+comportamento per l'utente. Stato: ✅ portato e verde · ➖ non applicabile (motivo indicato).
 
 ## tests/test_core.py → test/core_test.dart
 | Web | App | Stato |
@@ -53,7 +53,7 @@ comportamento per l'utente. Stato: ✅ portato e verde · ⏳ fase successiva ·
 | Web | App | Stato |
 |---|---|---|
 | test_requires_login_and_security_headers | `security_test: bloccata: solo la schermata di sblocco` (+ FLAG_SECURE in MainActivity) | ✅ |
-| test_foreign_host_rejected | ➖ nessun server: niente header Host. Equivalente: nessuna porta aperta, verificato nell'audit | ⏳ fase 8 |
+| test_foreign_host_rejected | ➖ nessun server: niente header Host. Equivalente: nessuna porta in ascolto, verificato sul telefono ([sicurezza](sicurezza.md)) | ✅ |
 | test_post_without_csrf_rejected | ➖ nessun form web. Equivalente: deep link accettato solo con `state` valido, monouso, schema `bankingmobile://callback` (`bank_test: ritorno con state sconosciuto…`) | ✅ |
 | test_login_flow_and_pages | `security_test: bloccata… → sblocco → barra con le 5 voci`, `Altro → Impostazioni` | ✅ (pagine complete nelle fasi 3-6) |
 | test_wrong_password | `AppLock: si sblocca solo con autenticazione riuscita`, `senza blocco schermo resta bloccata` | ✅ |

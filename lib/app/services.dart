@@ -16,6 +16,7 @@ class AppServices {
     required this.api,
     required this.pickPem,
     required this.openBankPage,
+    this.isDeviceRooted = _notRooted,
   })  : sync = SyncRunner(db, api) {
     bank = BankService(db, api, sync);
   }
@@ -31,7 +32,12 @@ class AppServices {
 
   /// Apre la pagina di login della banca (scheda sicura del browser).
   final Future<bool> Function(Uri url) openBankPage;
+
+  /// Telefono con root: solo un avviso dopo lo sblocco.
+  final Future<bool> Function() isDeviceRooted;
 }
+
+Future<bool> _notRooted() async => false;
 
 class Services extends InheritedWidget {
   const Services({super.key, required this.services, required super.child});

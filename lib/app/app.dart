@@ -59,8 +59,23 @@ class _BankingAppState extends State<BankingApp> with WidgetsBindingObserver {
     if (_wasLocked && !locked) {
       // Aggiornamento automatico all'apertura, solo per i conti "scaduti" (>12h).
       unawaited(widget.services.sync.start(onlyDue: true));
+      unawaited(_warnIfRooted());
     }
     _wasLocked = locked;
+  }
+
+  bool _rootWarned = false;
+
+  /// Una volta per avvio: con il root altre app possono leggere i dati di questa.
+  Future<void> _warnIfRooted() async {
+    if (_rootWarned || !await widget.services.isDeviceRooted()) return;
+    _rootWarned = true;
+    _messenger.currentState?.showSnackBar(const SnackBar(
+      content: Text('Questo telefono sembra avere i permessi di root: altre app potrebbero '
+          'leggere i dati di Banking Dashboard.'),
+      backgroundColor: Color(0xFF5A2020),
+      duration: Duration(seconds: 10),
+    ));
   }
 
   /// Ritorno dalla banca: lo `state` monouso decide se è valido, a prescindere

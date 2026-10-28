@@ -118,6 +118,21 @@ void main() {
       }
     });
 
+    testWidgets('telefono con root: avviso dopo lo sblocco, senza blocco', (tester) async {
+      final rooted = AppServices(
+        db: db,
+        secrets: secrets,
+        api: EnableBankingClient(() => readCredentials(secrets)),
+        pickPem: () async => null,
+        openBankPage: (url) async => true,
+        isDeviceRooted: () async => true,
+      );
+      await tester.pumpWidget(BankingApp(services: rooted, lock: AppLock(FakeAuth())));
+      await settle(tester);
+      expect(find.byType(Shell), findsOneWidget); // l'app resta usabile
+      expect(find.textContaining('permessi di root'), findsOneWidget);
+    });
+
     testWidgets('blocco per inattività nasconde subito i dati', (tester) async {
       var now = DateTime(2026, 10, 27, 10);
       final auth = FakeAuth();
