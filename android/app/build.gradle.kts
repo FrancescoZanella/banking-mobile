@@ -49,4 +49,6 @@ flutter {
 
 dependencies {
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
+    // Custom Tabs effimere (incognito) per il login con la banca.
+    implementation("androidx.browser:browser:1.9.0")
 }

@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:app_links/app_links.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'app/app.dart';
@@ -43,9 +44,18 @@ Future<PickedFile?> _pickPem() async {
   return (name: file.name, content: utf8.decode(bytes));
 }
 
-/// Login con la banca in una Custom Tab di Chrome: pagina vera della banca,
-/// con barra degli indirizzi visibile, senza che l'app possa leggerla.
-Future<bool> _openBankPage(Uri url) {
-  if (url.scheme != 'https') return Future.value(false);
+const _customTabs = MethodChannel('bankingmobile/custom_tabs');
+
+/// Login con la banca in una Custom Tab effimera di Chrome (come l'incognito):
+/// pagina vera della banca, indirizzo visibile, l'app non può leggerla e nulla
+/// resta nel Chrome di tutti i giorni. Ripiego: Custom Tab normale.
+Future<bool> _openBankPage(Uri url) async {
+  if (url.scheme != 'https') return false;
+  try {
+    final mode = await _customTabs.invokeMethod<String>('open', {'url': url.toString()});
+    if (mode != null) return true;
+  } on PlatformException {
+    // ripiego sotto
+  }
   return launchUrl(url, mode: LaunchMode.inAppBrowserView);
 }

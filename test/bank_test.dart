@@ -215,6 +215,15 @@ void main() {
     expect(await scalar(db, 'SELECT hidden FROM accounts WHERE id = ?', [zeta]), 0);
   });
 
+  test('indirizzi di ritorno: solo deep link e App Link della relay', () {
+    expect(isCallbackUri(Uri.parse('bankingmobile://callback?state=a&code=b')), isTrue);
+    expect(isCallbackUri(Uri.parse('https://francescozanella.github.io/Bankrelay/app/?state=a&code=b')), isTrue);
+    expect(isCallbackUri(Uri.parse('https://francescozanella.github.io/Bankrelay/?state=a')), isFalse); // relay del web
+    expect(isCallbackUri(Uri.parse('https://evil.example/Bankrelay/app/?state=a')), isFalse);
+    expect(isCallbackUri(Uri.parse('http://francescozanella.github.io/Bankrelay/app/?state=a')), isFalse);
+    expect(isCallbackUri(Uri.parse('bankingmobile://altro?state=a')), isFalse);
+  });
+
   test('notifica dei consensi: solo nomi e giorni, mai importi', () {
     final text = consentNotificationText(const [
       ConsentAlert('a', 'Zeta', 0, expired: true),

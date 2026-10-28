@@ -30,7 +30,32 @@ class AuthStart {
   final String? error;
 }
 
-bool _isCatalogError(Object e) => e is AppError || e is EnableBankingError || e is TimeoutException;
+/// Errori "attesi" da mostrare all'utente: API, configurazione, rete (assenza di
+/// connessione, DNS, TLS, timeout), risposte non valide. Gli errori di
+/// programmazione (Error) non vengono nascosti.
+bool _isCatalogError(Object e) => e is Exception;
+
+/// Indirizzi di ritorno accettati: il deep link della relay
+/// (bankingmobile://callback) e l'App Link verificato sulla relay stessa.
+bool isCallbackUri(Uri uri) {
+  if (uri.scheme == AppConfig.callbackScheme) return uri.host == AppConfig.callbackHost;
+  final relay = Uri.parse(AppConfig.redirectUri);
+  return uri.scheme == 'https' && uri.host == relay.host && uri.path.startsWith(relay.path.replaceAll(RegExp(r'/$'), ''));
+}
+
+/// Messaggio leggibile per un errore di rete o dell'API.
+String describeError(Object e) {
+  if (e is AppError || e is EnableBankingError) return '$e';
+  if (e is TimeoutException) return 'nessuna risposta da Enable Banking (timeout)';
+  final text = '$e';
+  if (text.contains('SocketException') || text.contains('ClientException') || text.contains('Failed host lookup')) {
+    return 'connessione a Enable Banking non riuscita: controlla la rete';
+  }
+  if (text.contains('HandshakeException') || text.contains('CERTIFICATE')) {
+    return 'connessione sicura con Enable Banking non riuscita (certificato)';
+  }
+  return text;
+}
 
 /// Una sola sincronizzazione alla volta (come background.py del web).
 class SyncRunner extends ChangeNotifier {
@@ -72,15 +97,20 @@ class BankService {
   final EnableBankingApi api;
   final SyncRunner sync;
 
+  /// Motivo dell'ultimo errore del catalogo, da mostrare sotto l'avviso.
+  String? catalogError;
+
   /// Nomi del catalogo italiano in ordine alfabetico; null se non disponibile.
   Future<List<String>?> catalogNames() async {
     try {
       final names = [for (final a in await api.listAspsps(AppConfig.country)) a['name'] as String]
         ..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
+      catalogError = null;
       return names;
     } catch (e) {
-      if (_isCatalogError(e)) return null; // la pagina mostra un avviso al posto del menu
-      rethrow;
+      if (!_isCatalogError(e)) rethrow;
+      catalogError = describeError(e);
+      return null; // la pagina mostra un avviso al posto del menu
     }
   }
 
@@ -92,7 +122,7 @@ class BankService {
       // Il nome arriva dal menu, ma si valida comunque contro il catalogo.
       aspsp = await api.getAspsp(name, AppConfig.country);
     } catch (e) {
-      if (_isCatalogError(e)) return AuthStart.error('Lettura del catalogo non riuscita: $e');
+      if (_isCatalogError(e)) return AuthStart.error('Lettura del catalogo non riuscita: ${describeError(e)}');
       rethrow;
     }
     if (aspsp == null) {
@@ -111,7 +141,7 @@ class BankService {
     try {
       aspsp = await api.getAspsp(bank['aspsp_name'] as String? ?? '', bank['country'] as String? ?? '');
     } catch (e) {
-      if (_isCatalogError(e)) return AuthStart.error('Avvio collegamento non riuscito: $e');
+      if (_isCatalogError(e)) return AuthStart.error('Avvio collegamento non riuscito: ${describeError(e)}');
       rethrow;
     }
     if (aspsp == null) {
@@ -127,10 +157,10 @@ class BankService {
       await api.checkApplication();
       url = await api.startAuth(aspsp, state);
     } on EnableBankingError catch (e) {
-      return AuthStart.error('Enable Banking ha rifiutato il collegamento a $label ($e). '
+      return AuthStart.error('Enable Banking ha rifiutato il collegamento a $label (${describeError(e)}). '
           'Verifica che la banca sia collegata alla tua app nel Control Panel.');
     } catch (e) {
-      if (_isCatalogError(e)) return AuthStart.error('Avvio collegamento non riuscito: $e');
+      if (_isCatalogError(e)) return AuthStart.error('Avvio collegamento non riuscito: ${describeError(e)}');
       rethrow;
     }
     await savePending(db, state, bankKey, aspsp);
@@ -144,7 +174,7 @@ class BankService {
 
   /// Ritorno dalla banca (deep link bankingmobile://callback?state&code…).
   Future<Flash> handleCallback(Uri uri) async {
-    if (uri.scheme != AppConfig.callbackScheme || uri.host != AppConfig.callbackHost) {
+    if (!isCallbackUri(uri)) {
       return const Flash('Indirizzo di ritorno non riconosciuto.', ok: false);
     }
     final query = uri.queryParameters;
@@ -189,7 +219,7 @@ class BankService {
         return saveSession(txn, bankKey, session);
       });
     } catch (e) {
-      if (_isCatalogError(e)) return Flash('Collegamento non completato: $e', ok: false);
+      if (_isCatalogError(e)) return Flash('Collegamento non completato: ${describeError(e)}', ok: false);
       rethrow;
     }
 
@@ -217,7 +247,7 @@ class BankService {
     try {
       await _revoke(bankKey);
     } catch (e) {
-      if (_isCatalogError(e)) return Flash('Scollegamento non riuscito: $e', ok: false);
+      if (_isCatalogError(e)) return Flash('Scollegamento non riuscito: ${describeError(e)}', ok: false);
       rethrow;
     }
     return Flash('${bank['label']} scollegata: il consenso è stato revocato e non arriveranno '
@@ -236,7 +266,7 @@ class BankService {
       await _revoke(bankKey);
     } catch (e) {
       if (_isCatalogError(e)) {
-        return Flash('Eliminazione annullata: revoca del consenso non riuscita ($e).', ok: false);
+        return Flash('Eliminazione annullata: revoca del consenso non riuscita (${describeError(e)}).', ok: false);
       }
       rethrow;
     }

@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.francescozanella.bankingmobile",
+      "sha256_cert_fingerprints": [
+        "42:55:B8:08:53:5C:E9:5A:97:89:B1:C9:83:5E:08:D8:43:2D:46:F6:27:35:EE:E6:5C:6F:29:4E:52:CC:39:A5"
+      ]
+    }
+  }
+]

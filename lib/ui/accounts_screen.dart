@@ -18,13 +18,12 @@ class AccountsScreen extends StatefulWidget {
 }
 
 class _Data {
-  _Data(this.banks, this.consents, this.accounts, this.alerts, this.runs, this.catalog);
+  _Data(this.banks, this.consents, this.accounts, this.alerts, this.runs);
   final List<Map<String, Object?>> banks;
   final Map<String, Map<String, Object?>> consents;
   final List<Map<String, Object?>> accounts;
   final Map<String, ConsentAlert> alerts;
   final List<Map<String, Object?>> runs;
-  final List<String>? catalog;
 
   Set<String> get linked => {
         for (final b in banks)
@@ -78,7 +77,6 @@ class _AccountsScreenState extends State<AccountsScreen> {
       await accountsOverview(s.db),
       {for (final a in await consentAlerts(s.db)) a.key: a},
       runs,
-      await s.bank.catalogNames(),
     );
   }
 
@@ -101,12 +99,13 @@ class _AccountsScreenState extends State<AccountsScreen> {
 
   Future<void> _connectNew(_Data data) async {
     final s = Services.of(context);
-    final name = await showModalBottomSheet<String>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: AppColors.surface,
-      builder: (context) => _BankPicker(catalog: data.catalog, linked: data.linked),
-    );
+    // Pagina intera (non un pannello): la ricerca resta stabile con la tastiera
+    // aperta. Il catalogo si carica qui, non con la pagina Conti: se è lento o
+    // non risponde la pagina Conti resta comunque utilizzabile.
+    final name = await Navigator.of(context).push<String>(MaterialPageRoute(
+      builder: (context) =>
+          _BankPicker(catalog: s.bank.catalogNames(), reason: () => s.bank.catalogError, linked: data.linked),
+    ));
     if (name != null) await _openAuth(() => s.bank.connectNew(name));
   }
 
@@ -217,6 +216,20 @@ class _AccountsScreenState extends State<AccountsScreen> {
       body: FutureBuilder<_Data>(
         future: _data,
         builder: (context, snap) {
+          if (snap.hasError) {
+            return Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(mainAxisSize: MainAxisSize.min, children: [
+                  const Text('Impossibile caricare i conti.', style: TextStyle(fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 8),
+                  Text(describeError(snap.error!), textAlign: TextAlign.center, style: const TextStyle(color: AppColors.muted)),
+                  const SizedBox(height: 16),
+                  FilledButton(onPressed: _reload, child: const Text('Riprova')),
+                ]),
+              ),
+            );
+          }
           final data = snap.data;
           if (data == null) return const Center(child: CircularProgressIndicator());
           final totals = totalsByCurrency([for (final a in data.accounts) if (a['hidden'] != 1) a]);
@@ -318,8 +331,9 @@ class _AccountsScreenState extends State<AccountsScreen> {
 }
 
 class _BankPicker extends StatefulWidget {
-  const _BankPicker({required this.catalog, required this.linked});
-  final List<String>? catalog;
+  const _BankPicker({required this.catalog, required this.reason, required this.linked});
+  final Future<List<String>?> catalog;
+  final String? Function() reason;
   final Set<String> linked;
 
   @override
@@ -327,47 +341,85 @@ class _BankPicker extends StatefulWidget {
 }
 
 class _BankPickerState extends State<_BankPicker> {
-  String _query = '';
+  final _search = TextEditingController();
+  late final Future<List<String>?> _catalog = widget.catalog;
+
+  @override
+  void initState() {
+    super.initState();
+    _search.addListener(() => setState(() {}));
+  }
+
+  @override
+  void dispose() {
+    _search.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    final catalog = widget.catalog;
-    final names = catalog?.where((n) => n.toLowerCase().contains(_query.toLowerCase())).toList();
-    return SafeArea(
-      child: Padding(
-        padding: EdgeInsets.fromLTRB(16, 16, 16, MediaQuery.of(context).viewInsets.bottom + 16),
-        child: SizedBox(
-          height: MediaQuery.of(context).size.height * .7,
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            const Text('Collega una banca', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
-            const SizedBox(height: 6),
-            const Text(
-              'Prima collega il conto alla tua app nel Control Panel di Enable Banking: la banca compare '
-              'qui solo se il login va a buon fine.',
-              style: TextStyle(color: AppColors.muted),
+    return Scaffold(
+      appBar: AppBar(title: const Text('Collega una banca')),
+      body: FutureBuilder<List<String>?>(
+        future: _catalog,
+        builder: (context, snap) {
+          if (snap.connectionState != ConnectionState.done) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          final catalog = snap.data;
+          final query = _search.text.trim().toLowerCase();
+          final names = catalog?.where((n) => n.toLowerCase().contains(query)).toList();
+          return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+            const Padding(
+              padding: EdgeInsets.fromLTRB(16, 0, 16, 12),
+              child: Text(
+                'Prima collega il conto alla tua app nel Control Panel di Enable Banking: la banca '
+                'compare qui solo se il login va a buon fine.',
+                style: TextStyle(color: AppColors.muted),
+              ),
             ),
-            const SizedBox(height: 12),
             if (catalog == null)
-              const Text('Elenco banche non disponibile in questo momento: riprova più tardi.',
-                  key: Key('catalog-unavailable'))
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Text(
+                  'Elenco banche non disponibile in questo momento: riprova più tardi.'
+                  '${widget.reason() != null ? '\n\nMotivo: ${widget.reason()}' : ''}',
+                  key: const Key('catalog-unavailable'),
+                ),
+              )
             else ...[
-              TextField(
-                decoration: const InputDecoration(hintText: 'Cerca la banca', prefixIcon: Icon(Icons.search)),
-                onChanged: (v) => setState(() => _query = v),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: TextField(
+                  key: const Key('bank-search'),
+                  controller: _search,
+                  autofocus: true,
+                  textInputAction: TextInputAction.search,
+                  decoration: InputDecoration(
+                    hintText: 'Cerca la banca',
+                    prefixIcon: const Icon(Icons.search),
+                    suffixIcon: _search.text.isEmpty
+                        ? null
+                        : IconButton(icon: const Icon(Icons.close), onPressed: _search.clear),
+                  ),
+                ),
               ),
               const SizedBox(height: 8),
               Expanded(
-                child: ListView(children: [
-                  for (final name in names!)
-                    ListTile(
-                      title: Text(widget.linked.contains(name) ? '$name (già collegata)' : name),
-                      onTap: () => Navigator.pop(context, name),
-                    ),
-                ]),
+                child: names!.isEmpty
+                    ? const Center(child: Text('Nessuna banca trovata.', style: TextStyle(color: AppColors.muted)))
+                    : ListView.builder(
+                        keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+                        itemCount: names.length,
+                        itemBuilder: (context, i) => ListTile(
+                          title: Text(widget.linked.contains(names[i]) ? '${names[i]} (già collegata)' : names[i]),
+                          onTap: () => Navigator.pop(context, names[i]),
+                        ),
+                      ),
               ),
             ],
-          ]),
-        ),
+          ]);
+        },
       ),
     );
   }
