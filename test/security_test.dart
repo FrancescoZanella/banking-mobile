@@ -172,6 +172,10 @@ void main() {
       final creds = await readCredentials(secrets);
       expect((creds?.appId, creds?.privateKeyPem), ('12345678-9abc-4def-8123-456789abcdef', testPem));
       expect(find.textContaining('cancella il file .pem'), findsOneWidget);
+      // L'APP_ID salvato non resta in chiaro: solo le ultime cifre.
+      expect(find.text('APP_ID salvato: •••• cdef'), findsOneWidget);
+      expect(find.textContaining('12345678'), findsNothing);
+      expect(tester.widget<TextField>(find.byKey(const Key('app-id'))).controller!.text, isEmpty);
       // Nessun segreto finisce nel database (I/O reale: fuori dal tempo simulato).
       final leaked = await tester.runAsync(
           () => scalar(db, "SELECT count(*) FROM settings WHERE value LIKE '%PRIVATE KEY%'"));

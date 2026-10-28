@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Il viola dell'app (AppColors.accent), come l'icona della versione web. -->
+    <color name="ic_launcher_background">#7C83FF</color>
+</resources>

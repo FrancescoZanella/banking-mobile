@@ -18,6 +18,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
   String? _pem;
   String? _pemName;
   bool? _configured;
+  String? _savedAppId;
+  bool _showAppId = false;
   String? _error;
 
   @override
@@ -31,7 +33,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
     if (!mounted) return;
     setState(() {
       _configured = creds != null;
-      _appId.text = creds?.appId ?? _appId.text;
+      // L'APP_ID salvato non torna nel campo: se ne mostrano solo le ultime cifre.
+      _savedAppId = creds?.appId;
     });
   }
 
@@ -56,6 +59,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
     await saveCredentials(services.secrets, _appId.text, pem!);
     if (!mounted) return;
     setState(() {
+      _savedAppId = _appId.text.trim();
+      _appId.clear();
+      _showAppId = false;
       _pem = null;
       _pemName = null;
       _configured = true;
@@ -84,7 +90,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
     if (ok != true) return;
     await deleteCredentials(services.secrets);
-    if (mounted) setState(() => _configured = false);
+    if (mounted) {
+      setState(() {
+        _configured = false;
+        _savedAppId = null;
+      });
+    }
   }
 
   @override
@@ -112,11 +123,24 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       : "Inserisci l'APP_ID dell'applicazione creata per il telefono e importa la sua chiave privata (.pem).",
                   style: const TextStyle(color: AppColors.muted),
                 ),
+                if (_savedAppId case final saved?) ...[
+                  const SizedBox(height: 12),
+                  Text('APP_ID salvato: ${maskAppId(saved)}',
+                      key: const Key('saved-app-id'), style: const TextStyle(color: AppColors.muted)),
+                ],
                 const SizedBox(height: 16),
                 TextField(
                   key: const Key('app-id'),
                   controller: _appId,
-                  decoration: const InputDecoration(hintText: 'APP_ID'),
+                  obscureText: !_showAppId,
+                  decoration: InputDecoration(
+                    hintText: _configured == true ? 'Nuovo APP_ID' : 'APP_ID',
+                    suffixIcon: IconButton(
+                      tooltip: _showAppId ? 'Nascondi' : 'Mostra',
+                      icon: Icon(_showAppId ? Icons.visibility_off_outlined : Icons.visibility_outlined),
+                      onPressed: () => setState(() => _showAppId = !_showAppId),
+                    ),
+                  ),
                   autocorrect: false,
                   enableSuggestions: false,
                 ),
@@ -143,3 +167,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 }
+
+/// "12345678-…-456789abcdef" → "•••• cdef": basta a riconoscerlo, non a copiarlo.
+String maskAppId(String appId) => '•••• ${appId.length > 4 ? appId.substring(appId.length - 4) : appId}';

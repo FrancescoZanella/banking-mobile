@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Banca (come l'icona della dashboard web), dentro la zona sicura di 66dp. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Tetto e architrave -->
+    <path android:fillColor="#FFFFFF" android:pathData="M54,31 L77,43.5 L31,43.5 Z" />
+    <path android:fillColor="#FFFFFF" android:pathData="M31,45.5 h46 v3.5 h-46 Z" />
+    <!-- Quattro colonne -->
+    <path android:fillColor="#FFFFFF" android:pathData="M36,52 h5.5 v16 h-5.5 Z" />
+    <path android:fillColor="#FFFFFF" android:pathData="M46,52 h5.5 v16 h-5.5 Z" />
+    <path android:fillColor="#FFFFFF" android:pathData="M56.5,52 h5.5 v16 h-5.5 Z" />
+    <path android:fillColor="#FFFFFF" android:pathData="M66.5,52 h5.5 v16 h-5.5 Z" />
+    <!-- Base -->
+    <path android:fillColor="#FFFFFF" android:pathData="M31,71 h46 v4.5 h-46 Z" />
+</vector>

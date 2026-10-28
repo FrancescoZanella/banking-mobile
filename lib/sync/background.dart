@@ -32,7 +32,7 @@ Future<void> scheduleBackgroundSync() async {
 
 Future<void> initNotifications({bool requestPermission = false}) async {
   await _notifications.initialize(
-    settings: const InitializationSettings(android: AndroidInitializationSettings('@mipmap/ic_launcher')),
+    settings: const InitializationSettings(android: AndroidInitializationSettings('@drawable/ic_notification')),
   );
   if (requestPermission) {
     await _notifications
