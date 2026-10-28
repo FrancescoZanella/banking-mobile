@@ -13,7 +13,7 @@ flussi di cassa per categoria. È la versione per telefono della dashboard web
 | **Tecnologia** | Flutter 3.32 · Dart 3.8 · SQLCipher · Android Keystore · WorkManager |
 | **Banche** | tutte quelle italiane del catalogo Enable Banking |
 | **Dati** | solo sul telefono, cifrati; l'unico servizio contattato è `api.enablebanking.com` |
-| **Stato** | completa: fasi 0-8 chiuse, 81 test, audit OWASP MASVS ([rapporto](docs/sicurezza.md)) |
+| **Stato** | completa: fasi 0-8 chiuse, 98 test, audit OWASP MASVS e controllo finale ([rapporto](docs/sicurezza.md)) |
 
 ## Cosa fa
 

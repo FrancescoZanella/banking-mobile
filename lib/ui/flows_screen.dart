@@ -187,7 +187,6 @@ class _FlowsScreenState extends State<FlowsScreen> {
         tile(
           'Investiti',
           Text(money(d.invested), key: const Key('invested'), style: big.copyWith(color: AppColors.accent)),
-          'acquisti meno vendite',
         ),
         tile('Tasso di risparmio', rateText,
             average == null ? null : 'media 12 mesi ${average >= 0 ? '${average.round()}%' : 'negativa'}'),

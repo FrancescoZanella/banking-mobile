@@ -124,6 +124,35 @@ release firmata installata sul telefono (Android 14).
 - Controllo della cronologia completa (28/10/2026): nessun `.pem`, keystore, `key.properties`, `.env` o
   database mai committato; nessun APP_ID, password, token, IBAN reale o indirizzo email nei contenuti.
 
+## Controllo finale (28/10/2026, sera)
+
+Ripetuto su tutto quello che è cambiato dopo l'audit: notifiche dei movimenti, ritorno dalla banca dopo
+un riavvio, Flussi, investimenti, dati dal 1 agosto 2026.
+
+| Controllo | Esito |
+|---|---|
+| Test automatici (`flutter test`) e analisi statica | ✅ 98 test verdi, nessun avviso |
+| Log nel codice dell'app (`print`, `debugPrint`, `Log`) | ✅ nessuno |
+| Log dei plugin nella release | ✅ `Log.d`/`Log.v` tolti da R8: `app_links` scriveva `code` e `state` del ritorno dalla banca |
+| SQL | ✅ nessuna query costruita con dati dell'utente: solo costanti del codice, i valori sono parametri |
+| Notifiche dei movimenti | ✅ visibilità privata (nascoste a telefono bloccato); il tocco apre il dettaglio solo dopo lo sblocco; nessuna azione dalla notifica |
+| Ritorno dalla banca dopo un riavvio | ✅ accettato solo con `state` valido e monouso; il link vecchio rimesso da Android è scartato; esito mostrato dopo lo sblocco |
+| Dati prima del 1 agosto 2026 | ✅ cancellati all'avvio, mai più scaricati |
+| Dipendenze (OSV) | ✅ nessuna vulnerabilità nota (100 pacchetti Dart, SQLCipher 4.10.0, androidx.browser 1.9.0) |
+| Cronologia Git | ✅ nessun file sensibile e nessun segreto |
+| APK di release | ✅ firmato con la chiave propria; non debuggable; backup e traffico in chiaro disattivati; permessi invariati; nessuna chiave o APP_ID incorporati; nessun file di simboli; nessuna stringa di log di `app_links` |
+
+**Prove sul telefono (sera):**
+
+| Prova | Esito |
+|---|---|
+| Copiare il DB con `run-as` / leggere la cartella dell'app | rifiutato: «package not debuggable» / «Permission denied» |
+| Backup | disattivato |
+| Ritorno dalla banca con `state` falso ad app chiusa | l'app si avvia e lo rifiuta; nessuna riga dell'app nel registro di sistema (l'unica traccia è l'annotazione del comando `adb` di prova da parte di `adbd`, che senza cavo non esiste) |
+| Screenshot con l'app in primo piano | completamente nero (0 campioni non neri su 106.912) |
+| Porte in ascolto | nessun socket dell'app |
+| File dell'app fuori dalla sua cartella privata | nessuno |
+
 ## Rischi residui
 
 - **Telefono con root o malware con privilegi di sistema:** potrebbe usare la chiave del Keystore

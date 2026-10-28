@@ -10,7 +10,8 @@ il risultato coincida.
 ```
 lib/
   main.dart            avvio: DB cifrato, Keystore, sblocco, deep link, sync in background
-  app/                 app.dart (blocco, deep link, MaterialApp), services.dart (dipendenze iniettabili)
+  app/                 app.dart (blocco, deep link, MaterialApp), services.dart (dipendenze iniettabili),
+                       return_links.dart (ritorno dalla banca anche dopo che HyperOS ha chiuso l'app)
   core/                money (centesimi, formato €), dates (date di calendario UTC), periods, config
   data/                database (schema, migrazioni), defaults (categorie, icone, regole),
                        secure_database (SQLCipher), secure_store (Keystore, credenziali)
@@ -18,7 +19,8 @@ lib/
                        (collega, rinnova, scollega, elimina, ritorno dalla banca, SyncRunner)
   sync/                sync (normalizza, deduplica, PDNG, storico/incrementale, is_due),
                        background (WorkManager ogni ~12 h, notifiche di scadenza)
-  domain/              categorize, reports, analysis, cashflow, budget, transactions, categories
+  domain/              categorize, reports, analysis, cashflow, transactions, categories,
+                       to_categorize (movimenti da notificare), budget (solo logica: pagina tolta)
   security/            app_lock (sblocco biometrico, 30 minuti di inattività)
   ui/                  una schermata per pagina + widgets (feed, dettaglio, avvisi, periodo) e charts
 ```
@@ -82,11 +84,34 @@ Database SQLCipher nella memoria privata dell'app; la chiave (256 bit casuali) �
 utilizzabile anche senza sblocco per permettere la sincronizzazione in background. Le tabelle sono le
 stesse del web: `banks`, `consents`, `accounts`, `balances`, `transactions`, `categories`,
 `category_rules`, `budgets`, `subscription_ignores`, `pending_auth`, `sync_runs`, `settings`.
+In più: `transactions.notified_at` (notifiche «da categorizzare») e `categories.investment`
+(categoria di investimento).
+
+**Regole dei conteggi** (`domain/reports.dart`):
+
+| Movimento | Totali di tutti i conti (Home, Analisi, Flussi, Movimenti senza filtro) | Movimenti filtrati su un conto |
+|---|---|---|
+| Spese ed entrate normali | contano | contano |
+| Giroconti (`is_internal = 1`) | non contano; in Flussi «Spostato tra i tuoi conti» | contano |
+| Investimenti (`categories.investment = 1`) | mai uscite o spese; sommati ai risparmiati; riquadro «Investiti» | mai uscite o spese |
+
+Risparmiati = entrate − uscite senza investimenti (cioè quello che resta sul conto più l'investito).
+
+**Dati dal 1 agosto 2026** (`AppConfig.dataStart`): la sincronizzazione non chiede né salva movimenti
+precedenti, `initDb` cancella quelli già presenti, grafici e confronti non vanno prima.
+
+**Ordine dei movimenti** (`txOrder`): data contabile dal più recente; nello stesso giorno (le banche non
+danno l'ora) prima quelli scaricati per ultimi.
 
 ## Differenze volute rispetto al web
 
 - Sblocco biometrico al posto di password, setup e "Cambia password".
 - Sincronizzazione anche in background, con notifica dei consensi in scadenza.
-- Barra di navigazione "5 + Altro"; dettaglio del movimento e filtri come pannelli dal basso.
+- Barra di navigazione Home, Analisi, Movimenti, Flussi, Altro; dettaglio del movimento e filtri come
+  pannelli dal basso.
+- Niente pagina Budget e abbonamenti (tolta su richiesta).
+- Dati dal 1 agosto 2026; giroconti neutri sul totale e reali sul singolo conto; categoria
+  Investimenti; Flussi anche per settimana e divisi per categoria; menu delle categorie dalla più usata.
+- Notifiche dei movimenti da categorizzare.
 - Export CSV con la condivisione di Android.
 - Colore delle categorie scelto da una tavolozza invece del selettore libero.

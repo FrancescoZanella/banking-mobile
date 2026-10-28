@@ -5,7 +5,7 @@
 | Percorso | Contenuto |
 |---|---|
 | `lib/` | codice dell'app, vedi [Architettura](architettura.md) |
-| `test/` | test di logica e delle schermate, uno per area (`bank`, `transactions`, `analysis_flows`, `budget_categories`, `security`, …) |
+| `test/` | test di logica e delle schermate, uno per area (`bank`, `transactions`, `analysis_flows`, `budget_categories`, `security`, `to_categorize`, `return_links`, `preferences`, `investments`, …): 98 test |
 | `integration_test/` | test da eseguire sul telefono |
 | `android/` | progetto Android: manifest, risorse, `MainActivity.kt`, firma e R8 (`app/build.gradle.kts`, `app/proguard-rules.pro`) |
 | `relay/` | sorgenti delle pagine pubbliche (ritorno dalla banca, `assetlinks.json`) |
@@ -37,9 +37,13 @@ L'ultimo controllo completo della cronologia (28/10/2026) non ha trovato segreti
 
 ```
 flutter analyze
-flutter test
+flutter test --timeout 60s
 flutter test integration_test -d <id-telefono>
 ```
+
+`--timeout 60s` fa fallire subito un test bloccato invece di aspettare 10 minuti. Nei widget test non
+aspettare con `tester.runAsync` una sincronizzazione avviata dall'app: resterebbe bloccata (usa
+`settle`, oppure scegli un caso che non sincronizza).
 
 - `test/`: logica (SQLite in memoria con `sqflite_common_ffi`) e schermate (widget test).
 - Nei widget test usa `settle(tester)` di `test/support.dart` invece di `pumpAndSettle`: le pagine
