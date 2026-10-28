@@ -59,10 +59,13 @@ String describeError(Object e) {
 
 /// Una sola sincronizzazione alla volta (come background.py del web).
 class SyncRunner extends ChangeNotifier {
-  SyncRunner(this._db, this._api);
+  SyncRunner(this._db, this._api, {this.afterSync});
 
   final Database _db;
   final EnableBankingApi _api;
+
+  /// Dopo ogni sincronizzazione (sul telefono: notifiche dei movimenti da categorizzare).
+  final Future<void> Function(Database db)? afterSync;
   Future<List<SyncResult>>? _running;
 
   bool get running => _running != null;
@@ -82,7 +85,9 @@ class SyncRunner extends ChangeNotifier {
     _running = job;
     notifyListeners();
     try {
-      return await job;
+      final results = await job;
+      await afterSync?.call(_db);
+      return results;
     } finally {
       _running = null;
       notifyListeners();

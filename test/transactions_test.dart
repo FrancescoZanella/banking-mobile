@@ -156,11 +156,14 @@ void main() {
     expect(find.text('1.234,56 €'), findsWidgets); // patrimonio
     expect(find.text('Oggi'), findsOneWidget);
     expect(find.text('Ieri'), findsOneWidget);
-    expect(find.text('Bar <Centrale>'), findsNWidgets(2)); // testo, mai HTML
-    expect(find.byWidgetPredicate((w) => w.key is ValueKey && '${(w.key as ValueKey).value}'.startsWith('tx-')),
-        findsNWidgets(3));
+    final feed = find.byWidgetPredicate((w) => w.key is ValueKey && '${(w.key as ValueKey).value}'.startsWith('tx-'));
+    final box = find.byKey(const Key('to-categorize'));
+    // Feed: 3 movimenti. Riquadro «Da categorizzare»: i 2 bar recenti (Netflix ha la sua regola).
+    expect(feed, findsNWidgets(5));
+    expect(find.descendant(of: box, matching: find.text('Bar <Centrale>')), findsNWidgets(2)); // testo, mai HTML
+    expect(find.text('Da categorizzare (2)'), findsOneWidget);
 
-    await tester.tap(find.byKey(ValueKey('tx-$acc|e|a')));
+    await tester.tap(find.byKey(ValueKey('tx-$acc|e|a')).first);
     await settle(tester);
     expect(find.text('Con Bar <Centrale>'), findsOneWidget);
     expect(find.text('-7,50 €'), findsOneWidget); // totale con la controparte
@@ -173,7 +176,8 @@ void main() {
       await storeTransactions(db, acc, [tx('4', ref: 'a', day: iso(today()))], '2026-01-01');
     });
     await pumpPage(tester, const HomeScreen());
-    await tester.tap(find.byKey(ValueKey('tx-$acc|e|a')));
+    expect(find.byKey(const Key('to-categorize')), findsOneWidget); // ancora senza categoria
+    await tester.tap(find.byKey(ValueKey('tx-$acc|e|a')).first);
     await settle(tester);
 
     await tester.tap(find.byKey(const Key('category-select')));
@@ -186,6 +190,7 @@ void main() {
     expect(find.byType(HomeScreen), findsOneWidget);
     expect(find.byKey(const Key('save-category')), findsNothing); // pannello chiuso
     expect(find.textContaining('Salute ·'), findsOneWidget); // riga del feed aggiornata
+    expect(find.byKey(const Key('to-categorize')), findsNothing); // categorizzato: esce dal riquadro
     final source = await tester.runAsync(() => scalar(db, "SELECT category_source FROM transactions"));
     expect(source, 'manual');
   });

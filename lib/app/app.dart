@@ -8,10 +8,11 @@ import '../security/app_lock.dart';
 import '../ui/lock_screen.dart';
 import '../ui/shell.dart';
 import '../ui/theme.dart';
+import '../ui/widgets.dart';
 import 'services.dart';
 
 class BankingApp extends StatefulWidget {
-  const BankingApp({super.key, required this.services, required this.lock, this.links});
+  const BankingApp({super.key, required this.services, required this.lock, this.links, this.openTransactions});
 
   final AppServices services;
   final AppLock lock;
@@ -19,12 +20,18 @@ class BankingApp extends StatefulWidget {
   /// Deep link in arrivo (ritorno dalla banca). Nei test uno stream finto.
   final Stream<Uri>? links;
 
+  /// Movimenti da aprire (tocco su una notifica «da categorizzare»).
+  final Stream<String>? openTransactions;
+
   @override
   State<BankingApp> createState() => _BankingAppState();
 }
 
 class _BankingAppState extends State<BankingApp> with WidgetsBindingObserver {
   final _messenger = GlobalKey<ScaffoldMessengerState>();
+  final _navigator = GlobalKey<NavigatorState>();
+  StreamSubscription<String>? _opens;
+  String? _pendingTx;
   Timer? _idleTimer;
   StreamSubscription<Uri>? _links;
   bool _wasLocked = true;
@@ -36,6 +43,10 @@ class _BankingAppState extends State<BankingApp> with WidgetsBindingObserver {
     // Controllo periodico dell'inattività mentre l'app è in primo piano.
     _idleTimer = Timer.periodic(const Duration(seconds: 30), (_) => widget.lock.checkIdle());
     _links = widget.links?.listen(_onLink);
+    _opens = widget.openTransactions?.listen((txId) {
+      _pendingTx = txId;
+      _openPendingTransaction();
+    });
     widget.lock.addListener(_onLockChanged);
   }
 
@@ -43,6 +54,7 @@ class _BankingAppState extends State<BankingApp> with WidgetsBindingObserver {
   void dispose() {
     _idleTimer?.cancel();
     _links?.cancel();
+    _opens?.cancel();
     widget.lock.removeListener(_onLockChanged);
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
@@ -60,8 +72,24 @@ class _BankingAppState extends State<BankingApp> with WidgetsBindingObserver {
       // Aggiornamento automatico all'apertura, solo per i conti "scaduti" (>12h).
       unawaited(widget.services.sync.start(onlyDue: true));
       unawaited(_warnIfRooted());
+      if (_pendingFlash case final flash?) {
+        _pendingFlash = null;
+        WidgetsBinding.instance.addPostFrameCallback((_) => _showFlash(flash));
+      }
+      // Dopo lo sblocco, il movimento della notifica toccata.
+      WidgetsBinding.instance.addPostFrameCallback((_) => _openPendingTransaction());
     }
     _wasLocked = locked;
+  }
+
+  /// Apre il dettaglio del movimento atteso, ma solo ad app sbloccata.
+  void _openPendingTransaction() {
+    final txId = _pendingTx, context = _navigator.currentContext;
+    if (txId == null || context == null || widget.lock.locked) return;
+    _pendingTx = null;
+    unawaited(showTransactionDetail(context, txId).then((changed) {
+      if (changed) widget.services.sync.notifyChanged();
+    }));
   }
 
   bool _rootWarned = false;
@@ -81,14 +109,29 @@ class _BankingAppState extends State<BankingApp> with WidgetsBindingObserver {
   /// Ritorno dalla banca: lo `state` monouso decide se è valido, a prescindere
   /// dal blocco (non mostra dati); l'esito si vede dopo lo sblocco.
   Future<void> _onLink(Uri uri) async {
-    final Flash flash = await widget.services.bank.handleCallback(uri);
-    _messenger.currentState?.showSnackBar(SnackBar(
-      content: Text(flash.text),
-      backgroundColor: flash.ok ? AppColors.surface3 : const Color(0xFF5A2020),
-      duration: const Duration(seconds: 10),
-    ));
+    Flash flash;
+    try {
+      flash = await widget.services.bank.handleCallback(uri);
+    } catch (e) {
+      // Mai un errore silenzioso: la banca non è stata salvata e va detto.
+      flash = Flash('Collegamento non completato: ${describeError(e)}. Riprova.', ok: false);
+    }
     widget.services.sync.notifyChanged();
+    if (widget.lock.locked) {
+      // Ad app appena riavviata: il messaggio si vede dopo lo sblocco.
+      _pendingFlash = flash;
+    } else {
+      _showFlash(flash);
+    }
   }
+
+  Flash? _pendingFlash;
+
+  void _showFlash(Flash flash) => _messenger.currentState?.showSnackBar(SnackBar(
+        content: Text(flash.text),
+        backgroundColor: flash.ok ? AppColors.surface3 : const Color(0xFF5A2020),
+        duration: const Duration(seconds: 10),
+      ));
 
   @override
   Widget build(BuildContext context) {
@@ -103,6 +146,7 @@ class _BankingAppState extends State<BankingApp> with WidgetsBindingObserver {
         supportedLocales: const [Locale('it')],
         localizationsDelegates: GlobalMaterialLocalizations.delegates,
         scaffoldMessengerKey: _messenger,
+        navigatorKey: _navigator,
         home: ListenableBuilder(
           listenable: widget.lock,
           builder: (context, _) => widget.lock.locked

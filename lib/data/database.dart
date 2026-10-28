@@ -110,12 +110,13 @@ Future<void> setSetting(DatabaseExecutor db, String key, String value) => db.raw
       [key, value],
     );
 
-Future<void> _addColumnIfMissing(
+/// True se la colonna è stata appena aggiunta.
+Future<bool> _addColumnIfMissing(
     DatabaseExecutor db, String table, String column, String definition) async {
   final columns = await db.rawQuery('PRAGMA table_info($table)');
-  if (!columns.any((c) => c['name'] == column)) {
-    await db.execute('ALTER TABLE $table ADD COLUMN $column $definition');
-  }
+  if (columns.any((c) => c['name'] == column)) return false;
+  await db.execute('ALTER TABLE $table ADD COLUMN $column $definition');
+  return true;
 }
 
 /// Crea o aggiorna lo schema. Idempotente: gira a ogni apertura.
@@ -127,6 +128,11 @@ Future<void> initDb(Database db) async {
   // Migrazioni dei database creati con versioni precedenti dello schema.
   await _addColumnIfMissing(db, 'accounts', 'hidden', 'INTEGER NOT NULL DEFAULT 0');
   await _addColumnIfMissing(db, 'categories', 'icon', 'TEXT');
+  // Movimento già segnalato (o da non segnalare) con la notifica «da categorizzare».
+  if (await _addColumnIfMissing(db, 'transactions', 'notified_at', 'TEXT')) {
+    // I movimenti scaricati prima di questa funzione non vanno notificati.
+    await db.rawUpdate("UPDATE transactions SET notified_at = 'prima'");
+  }
 
   final hasCategories = (await db.rawQuery('SELECT 1 FROM categories LIMIT 1')).isNotEmpty;
   if (!hasCategories) {

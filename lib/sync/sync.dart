@@ -76,8 +76,21 @@ Map<String, Object?> normalize(int accountId, Map<String, dynamic> tx) {
 ///
 /// I movimenti in attesa (PDNG) della finestra vengono rimossi prima: la banca
 /// li restituisce di nuovo se sono ancora in attesa, oppure come contabilizzati.
+/// La categoria scelta a mano e la notifica già inviata passano al movimento
+/// che li sostituisce (vedi [_replacementOf]).
+///
+/// Con [markNotified] i movimenti nuovi risultano già notificati: si usa per lo
+/// storico di una banca appena collegata o rinnovata.
 Future<int> storeTransactions(DatabaseExecutor db, int accountId,
-    List<Map<String, dynamic>> transactions, String windowFrom) async {
+    List<Map<String, dynamic>> transactions, String windowFrom, {String? markNotified}) async {
+  final pending = [
+    ...await db.rawQuery(
+      'SELECT id, amount_cents, counterparty, description, booking_date, category_id, '
+      "category_source, is_internal, notified_at FROM transactions WHERE account_id = ? AND status = 'PDNG' "
+      'AND (booking_date IS NULL OR booking_date >= ?)',
+      [accountId, windowFrom],
+    ),
+  ];
   await db.rawDelete(
     "DELETE FROM transactions WHERE account_id = ? AND status = 'PDNG' "
     'AND (booking_date IS NULL OR booking_date >= ?)',
@@ -96,11 +109,41 @@ Future<int> storeTransactions(DatabaseExecutor db, int accountId,
       await db.update('transactions', {...changes, 'updated_at': now},
           where: 'id = ?', whereArgs: [id]);
     } else {
-      await db.insert('transactions', {...tx, 'created_at': now, 'updated_at': now});
+      final previous = _replacementOf(tx, pending);
+      await db.insert('transactions', {
+        ...tx,
+        'created_at': now,
+        'updated_at': now,
+        'notified_at': previous?['notified_at'] ?? markNotified,
+        if (previous?['category_source'] == 'manual') ...{
+          'category_id': previous!['category_id'],
+          'category_source': 'manual',
+          'is_internal': previous['is_internal'],
+        },
+      });
       added++;
     }
   }
   return added;
+}
+
+/// Il movimento in attesa che [tx] sostituisce, se c'è (e lo toglie da [pending]):
+/// stesso id (ancora in attesa) oppure, perché molte banche cambiano id alla
+/// contabilizzazione, stesso importo e stessa controparte entro 7 giorni.
+Map<String, Object?>? _replacementOf(Map<String, Object?> tx, List<Map<String, Object?>> pending) {
+  String party(Map<String, Object?> t) =>
+      ((t['counterparty'] ?? t['description']) as String? ?? '').trim().toLowerCase();
+  bool near(Map<String, Object?> t) {
+    final a = parseIsoDay(t['booking_date'] as String?), b = parseIsoDay(tx['booking_date'] as String?);
+    return a == null || b == null || daysBetween(a, b).abs() <= 7;
+  }
+
+  var i = pending.indexWhere((p) => p['id'] == tx['id']);
+  if (i < 0) {
+    i = pending.indexWhere((p) =>
+        p['amount_cents'] == tx['amount_cents'] && party(p).isNotEmpty && party(p) == party(tx) && near(p));
+  }
+  return i < 0 ? null : pending.removeAt(i);
 }
 
 Future<void> storeBalances(DatabaseExecutor db, int accountId, List<Map<String, dynamic>> balances) async {
@@ -169,7 +212,8 @@ Future<SyncResult> syncAccount(Database db, EnableBankingApi api, Map<String, Ob
     final txs = await api.getTransactions(uid, dateFrom, dateTo: iso(t), strategy: strategy);
     final balances = await api.getBalances(uid);
     await db.transaction((txn) async {
-      result.added = await storeTransactions(txn, accountId, txs, dateFrom);
+      result.added = await storeTransactions(txn, accountId, txs, dateFrom,
+          markNotified: strategy == 'longest' ? 'storico' : null);
       await storeBalances(txn, accountId, balances);
       await txn.update('accounts', {'last_sync_at': utcNow(now)}, where: 'id = ?', whereArgs: [accountId]);
     });

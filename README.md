@@ -13,7 +13,7 @@ flussi di cassa, budget e abbonamenti. È la versione per telefono della dashboa
 | **Tecnologia** | Flutter 3.32 · Dart 3.8 · SQLCipher · Android Keystore · WorkManager |
 | **Banche** | tutte quelle italiane del catalogo Enable Banking |
 | **Dati** | solo sul telefono, cifrati; l'unico servizio contattato è `api.enablebanking.com` |
-| **Stato** | completa: fasi 0-8 chiuse, 70 test, audit OWASP MASVS ([rapporto](docs/sicurezza.md)) |
+| **Stato** | completa: fasi 0-8 chiuse, 81 test, audit OWASP MASVS ([rapporto](docs/sicurezza.md)) |
 
 ## Cosa fa
 
@@ -27,6 +27,8 @@ flussi di cassa, budget e abbonamenti. È la versione per telefono della dashboa
 - **Budget e abbonamenti:** limiti mensili con previsione a fine mese, abbonamenti riconosciuti in automatico.
 - **Categorie e regole:** icone, colori, regole per testo o codice esercente (MCC).
 - **Giroconti** tra i tuoi conti riconosciuti dall'IBAN o dal tuo nome: visibili, ma esclusi dai totali.
+- **Notifiche dei movimenti da categorizzare:** per ogni movimento nuovo che le regole non riconoscono;
+  il tocco apre il dettaglio per scegliere la categoria.
 
 ## Sicurezza in breve
 

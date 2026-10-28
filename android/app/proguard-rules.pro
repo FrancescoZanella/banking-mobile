@@ -13,3 +13,10 @@
 
 # Componenti differiti di Flutter (Play Core): non usati da questa app.
 -dontwarn com.google.android.play.core.**
+
+# Niente log di debug nella release: alcuni plugin (es. app_links) scrivono nel
+# registro di sistema l'indirizzo di ritorno dalla banca, con code e state.
+-assumenosideeffects class android.util.Log {
+    public static int v(...);
+    public static int d(...);
+}

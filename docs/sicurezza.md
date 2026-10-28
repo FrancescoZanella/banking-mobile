@@ -32,7 +32,11 @@ release firmata installata sul telefono (Android 14).
 - ✅ **Backup:** `allowBackup=false` e regole di esclusione per cloud e trasferimento. Sul telefono
   il flag `ALLOW_BACKUP` è assente.
 - ✅ **Nessun log** con dati bancari o segreti: nel codice non ci sono `print` né `debugPrint`.
-- ✅ **Notifiche:** contengono solo il nome della banca e i giorni alla scadenza.
+- ✅ **Notifiche:** quelle dei consensi contengono solo il nome della banca e i giorni alla scadenza.
+  Quelle dei movimenti da categorizzare (scelta dell'utente) mostrano esercente e importo, ma con
+  visibilità *privata*: sulla schermata di blocco il contenuto resta nascosto finché il telefono non
+  viene sbloccato. Il tocco apre il dettaglio solo dopo lo sblocco dell'app; dalla notifica non si
+  può modificare nulla.
 
 ### CRYPTO: crittografia
 

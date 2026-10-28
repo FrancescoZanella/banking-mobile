@@ -14,6 +14,29 @@ sblocco compare un avviso (l'app resta utilizzabile). La barra in basso ha cinqu
 - **Questo mese:** speso finora, entrate e uscite; **Dove spendi questo mese:** le 6 categorie principali.
 - **Movimenti recenti** raggruppati per giorno. Tocca un movimento per il dettaglio.
 
+## Movimenti da categorizzare
+
+Quando una sincronizzazione porta movimenti nuovi che le regole non hanno saputo classificare (finiti in
+*Altre spese*, *Altre entrate* o senza categoria), arriva una **notifica per ciascuno**, per esempio
+«Bar Centrale · -4,50 €». Tocca la notifica: l'app si apre (con l'impronta, se era bloccata)
+direttamente sul **dettaglio del movimento**, dove scegli la categoria e, se vuoi, una regola per i
+prossimi.
+
+- **Quando:** dopo ogni sincronizzazione (all'apertura e in background ogni ~12 ore). Non è in tempo
+  reale: la banca rende disponibili i movimenti con qualche ora o giorno di ritardo.
+- **Anche se «in attesa»:** la notifica arriva alla prima comparsa del movimento; la categoria che
+  scegli resta quando la banca lo contabilizza, senza una seconda notifica. Se nel frattempo cambia
+  l'importo (es. la mancia al ristorante), arriva come movimento nuovo.
+- **Mai notifiche** per giroconti, conti nascosti, movimenti già riconosciuti dalle regole, movimenti
+  più vecchi di 7 giorni e per lo storico scaricato collegando o rinnovando una banca.
+- **Schermata di blocco:** esercente e importo restano nascosti finché non sblocchi il telefono.
+- **Riquadro «Da categorizzare» in Home:** gli stessi movimenti dell'ultimo mese, anche se hai
+  ignorato la notifica. Sparisce quando non ce ne sono più.
+
+**Su Xiaomi (HyperOS):** perché la sincronizzazione in background parta davvero, imposta la batteria
+dell'app su *Nessuna restrizione* (Impostazioni → App → Gestisci app → Banking Dashboard → Risparmio
+batteria). Senza, le notifiche possono arrivare solo quando apri l'app.
+
 ## Dettaglio di un movimento
 
 Conto, date, descrizione, IBAN della controparte (mascherato), codice esercente. Da qui puoi:
@@ -108,5 +131,9 @@ tuoi conti o dal tuo nome. Se la banca non li indica, scegli *Giroconti* dal det
 
 **Non arrivano movimenti nuovi.** Controlla in Conti lo stato del consenso (se scaduto: *Rinnova*) e lo
 *Storico sync*. Ogni conto si aggiorna al massimo ogni 12 ore, per il limite delle API PSD2.
+
+**Non arrivano le notifiche dei movimenti.** Controlla che le notifiche dell'app siano attive e che
+la batteria sia su *Nessuna restrizione* (vedi sopra). Arrivano solo per i movimenti che le regole non
+riconoscono: quelli già categorizzati in automatico non disturbano.
 
 **Posso fare screenshot dell'app?** No, sono bloccati apposta (anche l'anteprima nelle app recenti).

@@ -5,6 +5,7 @@ import '../core/dates.dart';
 import '../core/money.dart';
 import '../domain/budget.dart' as budget;
 import '../domain/reports.dart';
+import '../domain/to_categorize.dart';
 import 'theme.dart';
 import 'widgets.dart';
 
@@ -25,13 +26,14 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeData {
-  _HomeData(this.accounts, this.summary, this.categories, this.days, this.budgetAlerts, this.alerts);
+  _HomeData(this.accounts, this.summary, this.categories, this.days, this.budgetAlerts, this.alerts, this.toCategorize);
   final List<Map<String, Object?>> accounts;
   final Map<String, int> summary;
   final List<Map<String, Object?>> categories;
   final List<(String?, List<Map<String, Object?>>)> days;
   final List<budget.BudgetAlert> budgetAlerts;
   final List<ConsentAlert> alerts;
+  final List<Map<String, Object?>> toCategorize;
 }
 
 class _HomeScreenState extends State<HomeScreen> {
@@ -74,6 +76,7 @@ class _HomeScreenState extends State<HomeScreen> {
       groupByDay(await recentTransactions(s.db)),
       await budget.alerts(s.db, now),
       await consentAlerts(s.db),
+      await toCategorize(s.db),
     );
   }
 
@@ -102,6 +105,7 @@ class _HomeScreenState extends State<HomeScreen> {
               for (final a in data.alerts) ConsentBanner(alert: a),
               for (final b in data.budgetAlerts) _BudgetBanner(alert: b, onShow: widget.onShowBudget),
               _hero(data, syncing),
+              if (data.toCategorize.isNotEmpty) ...[const SizedBox(height: 16), _toCategorize(data.toCategorize)],
               const SizedBox(height: 16),
               _month(data.summary),
               const SizedBox(height: 16),
@@ -162,6 +166,34 @@ class _HomeScreenState extends State<HomeScreen> {
                 separatorBuilder: (_, _) => const SizedBox(width: 10),
                 itemBuilder: (context, i) => _AccountCard(account: data.accounts[i]),
               ),
+            ),
+        ]),
+      ),
+    );
+  }
+
+  /// I movimenti che le regole non hanno saputo classificare (ultimo mese).
+  Widget _toCategorize(List<Map<String, Object?>> rows) {
+    const shown = 5;
+    return Card(
+      key: const Key('to-categorize'),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(4, 16, 4, 8),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text('Da categorizzare (${rows.length})',
+                  style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w600)),
+              const Text('Le regole non li hanno riconosciuti: tocca un movimento per scegliere la categoria.',
+                  style: TextStyle(color: AppColors.muted, fontSize: 13)),
+            ]),
+          ),
+          for (final t in rows.take(shown)) FeedItem(tx: t, onChanged: _reload),
+          if (rows.length > shown)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(12, 4, 12, 4),
+              child: Text('e altri ${rows.length - shown}', style: const TextStyle(color: AppColors.muted)),
             ),
         ]),
       ),

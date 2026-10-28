@@ -17,7 +17,9 @@ class AppServices {
     required this.pickPem,
     required this.openBankPage,
     this.isDeviceRooted = _notRooted,
-  })  : sync = SyncRunner(db, api) {
+    Future<void> Function(Database db)? afterSync,
+    this.dismissNotification = _noDismiss,
+  })  : sync = SyncRunner(db, api, afterSync: afterSync) {
     bank = BankService(db, api, sync);
   }
 
@@ -35,7 +37,12 @@ class AppServices {
 
   /// Telefono con root: solo un avviso dopo lo sblocco.
   final Future<bool> Function() isDeviceRooted;
+
+  /// Toglie la notifica di un movimento appena categorizzato.
+  final Future<void> Function(String txId) dismissNotification;
 }
+
+Future<void> _noDismiss(String _) async {}
 
 Future<bool> _notRooted() async => false;
 

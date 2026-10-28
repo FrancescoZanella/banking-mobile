@@ -190,6 +190,7 @@ class _TransactionDetailState extends State<_TransactionDetail> {
     final s = Services.of(context);
     final message = await setCategory(s.db, widget.txId, _selected, makeRule: _makeRule);
     s.sync.notifyChanged(); // aggiorna Home e Movimenti
+    await s.dismissNotification(widget.txId);
     if (!mounted) return;
     if (message != null) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));

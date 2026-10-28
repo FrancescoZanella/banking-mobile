@@ -56,6 +56,19 @@ Le schermate leggono il DB direttamente tramite le funzioni di `domain/` e si ri
 4. L'app accetta il ritorno solo con uno `state` valido, crea la sessione, salva banca e conti e
    avvia il recupero dello storico.
 
+**Movimenti da categorizzare**
+- Ogni movimento ha `notified_at`: vuoto = da segnalare. Lo storico scaricato collegando o rinnovando
+  una banca nasce già segnato (`storico`); quelli presenti prima di questa funzione sono segnati `prima`.
+- Dopo ogni sincronizzazione (`SyncRunner.afterSync` in primo piano, `callbackDispatcher` in
+  background) `notifyToCategorize` cerca i movimenti dubbi (`domain/to_categorize.dart`: visibili, non
+  giroconti, non scelti a mano, in *Altre spese*/*Altre entrate* o senza categoria, degli ultimi 7
+  giorni), mostra una notifica privata per ciascuno (canale «movimenti», raggruppate) e li segna.
+- Il tocco porta l'id del movimento nel payload; `BankingApp` lo tiene da parte finché l'app è
+  bloccata e dopo lo sblocco apre il dettaglio. Salvando la categoria la notifica viene tolta.
+- **Movimenti in attesa:** a ogni sincronizzazione vengono cancellati e riscaricati. Prima di
+  cancellarli `storeTransactions` ne ricorda categoria manuale e `notified_at` e li passa al movimento
+  che li sostituisce: stesso id, oppure stesso importo e stessa controparte entro 7 giorni.
+
 **Sincronizzazione**
 - All'apertura (dopo lo sblocco) e da WorkManager ogni ~12 ore, solo per i conti "scaduti".
 - Saldi e movimenti vengono normalizzati in centesimi interi, deduplicati con una chiave stabile; i

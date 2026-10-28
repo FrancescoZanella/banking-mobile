@@ -92,3 +92,15 @@ comportamento per l'utente. Stato: ✅ portato e verde · ➖ non applicabile (m
 | Credenziali Enable Banking validate e salvate solo nel Keystore, mai nel DB | `security_test: credenziali validate…`, `Altro → Impostazioni…` | ✅ |
 | Rinomina (max 40, vuoto = nome banca) e nascondi | `bank_test: rinomina … e nascondi` | ✅ |
 | Notifica consensi: solo nomi e giorni, mai importi | `bank_test: notifica dei consensi` | ✅ |
+
+## Solo app (senza corrispondente sul web)
+
+| Funzione | Test | Stato |
+|---|---|---|
+| Categoria manuale e notifica conservate quando un movimento in attesa viene riscaricato o contabilizzato con un altro id | `to_categorize_test: movimenti in attesa` (4 casi) | ✅ |
+| Quali movimenti notificare: dubbi recenti, visibili, non giroconti né scelti a mano, una volta sola; niente notifiche per lo storico e per i movimenti precedenti all'aggiornamento | `to_categorize_test: quali movimenti notificare` | ✅ |
+| Tocco sulla notifica: dettaglio solo dopo lo sblocco; categorizzare toglie la notifica | `to_categorize_test: tocco sulla notifica` | ✅ |
+| Avviso per telefono con root | `security_test: telefono con root: avviso dopo lo sblocco` | ✅ |
+
+La versione web ha ancora il difetto corretto qui: una categoria scelta a mano su un movimento in
+attesa si perde alla sincronizzazione successiva.

@@ -1,12 +1,13 @@
+import 'dart:async';
 import 'dart:convert';
 
-import 'package:app_links/app_links.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'app/app.dart';
+import 'app/return_links.dart';
 import 'app/services.dart';
 import 'bank/enable_banking.dart';
 import 'data/secure_database.dart';
@@ -25,14 +26,20 @@ Future<void> main() async {
     pickPem: _pickPem,
     openBankPage: _openBankPage,
     isDeviceRooted: _isDeviceRooted,
+    afterSync: notifyToCategorize,
+    dismissNotification: cancelMovementNotification,
   );
-  await initNotifications(requestPermission: true);
+  // Tocco su una notifica «da categorizzare»: si apre il dettaglio del movimento.
+  final openTransactions = StreamController<String>();
+  await initNotifications(requestPermission: true, onOpenTransaction: openTransactions.add);
+  if (await launchTransaction() case final txId?) openTransactions.add(txId);
   await scheduleBackgroundSync();
   runApp(BankingApp(
     services: services,
     lock: AppLock(DeviceAuthenticator()),
-    // Include anche il link che ha avviato l'app (ritorno dalla banca ad app chiusa).
-    links: AppLinks().uriLinkStream,
+    // Anche quando HyperOS ha chiuso l'app durante il login con la banca.
+    links: returnLinks(PluginLinkSource()),
+    openTransactions: openTransactions.stream,
   ));
 }
 
