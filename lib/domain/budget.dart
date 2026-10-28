@@ -169,3 +169,50 @@ Future<void> ignoreSubscription(DatabaseExecutor db, String name) => db.rawInser
 
 Future<void> restoreSubscription(DatabaseExecutor db, String key) =>
     db.delete('subscription_ignores', where: 'party = ?', whereArgs: [key]);
+
+/// Esito di un'azione delle pagine Budget e Categorie, come i flash del web.
+class Outcome {
+  const Outcome(this.text, {this.ok = true});
+  final String text;
+  final bool ok;
+}
+
+/// Spese che possono avere un budget, senza quelle che lo hanno già.
+Future<List<Map<String, Object?>>> freeCategories(DatabaseExecutor db) => db.rawQuery(
+      "SELECT id, name FROM categories WHERE kind = 'expense' "
+      'AND id NOT IN (SELECT category_id FROM budgets) ORDER BY name',
+    );
+
+/// Budget del mese: [target] è 'total' oppure l'id di una categoria di spesa.
+/// Importo 0 = rimuovi.
+Future<Outcome> saveBudget(DatabaseExecutor db, String target, String? amount) async {
+  final cents = parseEuro(amount);
+  if (cents == null) return const Outcome('Importo non valido: scrivi per esempio 250 oppure 1.600,50.', ok: false);
+  if (target == 'total') {
+    await setSetting(db, 'budget_total', '$cents');
+  } else {
+    final id = int.tryParse(target);
+    final ok = id != null &&
+        (await db.rawQuery("SELECT 1 FROM categories WHERE id = ? AND kind = 'expense'", [id])).isNotEmpty;
+    if (!ok) return const Outcome('Si può dare un budget solo a una categoria di spesa.', ok: false);
+    if (cents == 0) {
+      await db.delete('budgets', where: 'category_id = ?', whereArgs: [id]);
+    } else {
+      await db.rawInsert(
+        'INSERT INTO budgets (category_id, amount_cents) VALUES (?, ?) '
+        'ON CONFLICT(category_id) DO UPDATE SET amount_cents = excluded.amount_cents',
+        [id, cents],
+      );
+    }
+  }
+  return Outcome(cents > 0 ? 'Budget salvato.' : 'Budget rimosso.');
+}
+
+Future<Outcome> deleteBudget(DatabaseExecutor db, String target) async {
+  if (target == 'total') {
+    await setSetting(db, 'budget_total', '0');
+  } else {
+    await db.delete('budgets', where: 'category_id = ?', whereArgs: [int.tryParse(target)]);
+  }
+  return const Outcome('Budget rimosso.');
+}

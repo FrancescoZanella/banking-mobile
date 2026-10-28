@@ -11,12 +11,14 @@ import 'widgets.dart';
 /// Home: patrimonio, schede dei conti, avvisi, mese in corso, feed per giorno.
 /// Come home.html del web.
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key, this.onShowAll, this.onShowAnalysis, this.onShowAccounts});
+  const HomeScreen({super.key, this.onShowAll, this.onShowAnalysis, this.onShowAccounts, this.onShowBudget});
 
-  /// «Vedi tutti» → Movimenti; «Analisi» → Analisi; «Collega una banca» → Conti.
+  /// «Vedi tutti» → Movimenti; «Analisi» → Analisi; «Collega una banca» → Conti;
+  /// «Vedi budget» → Budget.
   final VoidCallback? onShowAll;
   final VoidCallback? onShowAnalysis;
   final VoidCallback? onShowAccounts;
+  final VoidCallback? onShowBudget;
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -98,7 +100,7 @@ class _HomeScreenState extends State<HomeScreen> {
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
             children: [
               for (final a in data.alerts) ConsentBanner(alert: a),
-              for (final b in data.budgetAlerts) _BudgetBanner(alert: b),
+              for (final b in data.budgetAlerts) _BudgetBanner(alert: b, onShow: widget.onShowBudget),
               _hero(data, syncing),
               const SizedBox(height: 16),
               _month(data.summary),
@@ -303,8 +305,9 @@ class _AccountCard extends StatelessWidget {
 }
 
 class _BudgetBanner extends StatelessWidget {
-  const _BudgetBanner({required this.alert});
+  const _BudgetBanner({required this.alert, this.onShow});
   final budget.BudgetAlert alert;
+  final VoidCallback? onShow;
 
   @override
   Widget build(BuildContext context) {
@@ -313,6 +316,11 @@ class _BudgetBanner extends StatelessWidget {
     final text = over
         ? 'Budget ${alert.name}: superato di ${money(s.spent - s.limit)}'
         : 'Budget ${alert.name}: usato il ${s.pct.round()}% (${money(s.spent)} di ${money(s.limit)})';
-    return NoticeBanner(color: over ? AppColors.neg : AppColors.warn, icon: Icons.track_changes, text: text);
+    return NoticeBanner(
+      color: over ? AppColors.neg : AppColors.warn,
+      icon: Icons.track_changes,
+      text: text,
+      action: TextButton(onPressed: onShow, child: const Text('Vedi budget')),
+    );
   }
 }

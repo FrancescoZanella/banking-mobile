@@ -79,11 +79,11 @@ comportamento per l'utente. Stato: ✅ portato e verde · ⏳ fase successiva ·
 | test_category_change_from_home_returns_home | `transactions_test: cambio categoria dal dettaglio: si resta in Home` | ✅ |
 | test_analysis_page_periods | `analysis_flows_test: Analisi: periodi, confronto allo stesso giorno, categoria → Movimenti filtrati` + `barre fino al mese del periodo…` (date non valide o future non esistono: il periodo si sceglie solo con i pulsanti) | ✅ |
 | test_flows_page | `analysis_flows_test: Flussi: solo mese e anno, totali, tasso di risparmio, entrate ricorrenti` | ✅ |
-| test_budget_page_and_forms | Budget: pagina e moduli | ⏳ fase 6 |
-| test_category_icons | Categorie: icone | ⏳ fase 6 |
+| test_budget_page_and_forms | `budget_categories_test: budget: salva, importo non valido, solo spese, totale «1.600», rimuovi` + `pagina Budget: aggiungi dal pannello…` + `Home: «Vedi budget» solo se un budget è al limite` | ✅ |
+| test_category_icons | `budget_categories_test: icone delle categorie…` + `pagina Categorie: tocco → cambio icona…` | ✅ |
 | test_transactions_periods_and_grouping | `transactions_test: periodi, raggruppamento…, CSV` + `Movimenti: chip attivi, «Azzera filtri», totali e gruppi per giorno` (CSV condiviso con Android) | ✅ |
 | test_accounts_page_states | `bank_test: pagina Conti: stati dei consensi, conto nascosto, azioni` | ✅ |
-| test_manual_transfer_and_visibility | `transactions_test: giroconto scelto a mano` (la parte sulle regole verso Giroconti nella pagina Categorie arriva in fase 6) | ✅ / ⏳ fase 6 |
+| test_manual_transfer_and_visibility | `transactions_test: giroconto scelto a mano` + `budget_categories_test: regole: …verso Giroconti no…` e `pagina Categorie: … regola verso Giroconti rifiutata` | ✅ |
 
 ## Solo mobile (sicurezza)
 | Controllo | Test | Stato |

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 
 import 'accounts_screen.dart';
 import 'analysis_screen.dart';
+import 'budget_screen.dart';
+import 'categories_screen.dart';
 import 'flows_screen.dart';
 import 'home_screen.dart';
 import 'settings_screen.dart';
@@ -9,7 +11,7 @@ import 'theme.dart';
 import 'transactions_screen.dart';
 
 /// Struttura dell'app: barra in basso con 5 voci (Home, Analisi, Movimenti,
-/// Budget, Altro). Budget e Categorie arrivano nella fase 6.
+/// Budget, Altro).
 class Shell extends StatefulWidget {
   const Shell({super.key});
 
@@ -34,12 +36,13 @@ class _ShellState extends State<Shell> {
       HomeScreen(
         onShowAll: () => setState(() => _index = 2),
         onShowAnalysis: () => setState(() => _index = 1),
+        onShowBudget: () => setState(() => _index = 3),
         onShowAccounts: () =>
             Navigator.of(context).push(MaterialPageRoute(builder: (_) => const AccountsScreen())),
       ),
       const AnalysisScreen(),
       const TransactionsScreen(),
-      const ComingSoon(title: 'Budget', phase: 6),
+      const BudgetScreen(),
       const MorePage(),
     ];
     return Scaffold(
@@ -73,7 +76,7 @@ class MorePage extends StatelessWidget {
         Card(
           child: Column(children: [
             item(Icons.swap_horiz, 'Flussi', const FlowsScreen()),
-            item(Icons.category_outlined, 'Categorie', const Scaffold(body: SafeArea(child: ComingSoon(title: 'Categorie', phase: 6)))),
+            item(Icons.category_outlined, 'Categorie', const CategoriesScreen()),
             item(Icons.account_balance_outlined, 'Conti', const AccountsScreen()),
             item(Icons.settings_outlined, 'Impostazioni', const SettingsScreen()),
           ]),
@@ -81,21 +84,4 @@ class MorePage extends StatelessWidget {
       ],
     );
   }
-}
-
-/// Pagina segnaposto finché la sua fase non è sviluppata.
-class ComingSoon extends StatelessWidget {
-  const ComingSoon({super.key, required this.title, required this.phase});
-  final String title;
-  final int phase;
-
-  @override
-  Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.fromLTRB(16, 24, 16, 0),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(title, style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w700)),
-          const SizedBox(height: 12),
-          Text('In arrivo (fase $phase).', style: const TextStyle(color: AppColors.muted)),
-        ]),
-      );
 }
