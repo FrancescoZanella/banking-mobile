@@ -299,12 +299,4 @@ class BankService {
   /// Un conto nascosto continua a sincronizzarsi, ma non entra nei totali.
   Future<void> toggleHidden(int accountId) =>
       db.rawUpdate('UPDATE accounts SET hidden = 1 - hidden WHERE id = ?', [accountId]);
-
-  /// Rispetta comunque l'intervallo minimo: protegge il limite PSD2.
-  Future<Flash> syncNow() async {
-    if (sync.running) return const Flash('Una sincronizzazione è già in corso.', ok: false);
-    unawaited(sync.start(onlyDue: true));
-    return Flash('Sincronizzazione avviata per i conti non aggiornati da più di '
-        '${AppConfig.minSyncInterval.inHours} ore.');
-  }
 }

@@ -63,14 +63,18 @@ class _BankingAppState extends State<BankingApp> with WidgetsBindingObserver {
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     // Al ritorno nell'app: se è passata mezz'ora dall'ultima attività, si blocca.
-    if (state == AppLifecycleState.resumed) widget.lock.checkIdle();
+    // Le pagine si ricaricano: la sync delle 7/14/23 o un pulsante della
+    // notifica possono aver cambiato i dati da un'altra connessione.
+    if (state == AppLifecycleState.resumed) {
+      widget.lock.checkIdle();
+      widget.services.sync.notifyChanged();
+    }
   }
 
   void _onLockChanged() {
     final locked = widget.lock.locked;
     if (_wasLocked && !locked) {
-      // Aggiornamento automatico all'apertura, solo per i conti "scaduti" (>12h).
-      unawaited(widget.services.sync.start(onlyDue: true));
+      // Niente sync all'apertura: solo alle 7, 14 e 23 (sync/schedule.dart).
       unawaited(_warnIfRooted());
       if (_pendingFlash case final flash?) {
         _pendingFlash = null;

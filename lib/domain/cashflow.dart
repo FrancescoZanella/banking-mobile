@@ -187,6 +187,38 @@ Future<({List<CategoryFlow> expense, List<CategoryFlow> income})> byCategory(
   return (expense: await side('<'), income: await side('>'));
 }
 
+class CategoryNet {
+  const CategoryNet(this.id, this.name, this.color, this.icon, this.net, this.n);
+  final int? id;
+  final String name;
+  final String color;
+  final String icon;
+
+  /// Entrate meno uscite della categoria, in centesimi: negativo = ci hai perso.
+  final int net;
+  final int n;
+}
+
+/// Saldo di ogni categoria nel periodo (entrate meno uscite), dal più negativo
+/// al più positivo. Stesse esclusioni di [byCategory]; le categorie a zero no.
+Future<List<CategoryNet>> netByCategory(DatabaseExecutor db, DateTime start, DateTime end) async {
+  final rows = await db.rawQuery(
+    "SELECT t.category_id AS id, coalesce(c.name, 'Senza categoria') AS name, "
+    "coalesce(c.color, '#adb5bd') AS color, coalesce(c.icon, 'tag') AS icon, "
+    'sum(t.amount_cents) AS net, count(*) AS n '
+    'FROM transactions t LEFT JOIN categories c ON c.id = t.category_id '
+    'WHERE t.is_internal = 0 AND $noInvestmentT AND t.$visibleSql '
+    'AND t.booking_date >= ? AND t.booking_date < ? '
+    'GROUP BY t.category_id HAVING net != 0 ORDER BY net, name',
+    [iso(start), iso(end)],
+  );
+  return [
+    for (final r in rows)
+      CategoryNet(r['id'] as int?, r['name'] as String, r['color'] as String, r['icon'] as String,
+          r['net'] as int, r['n'] as int),
+  ];
+}
+
 /// Soldi spostati tra i tuoi conti nel periodo: neutri sul totale, mostrati a
 /// parte. Ogni giroconto ha un'uscita e un'entrata; se uno dei due conti non è
 /// collegato se ne vede uno solo, quindi si prende il lato più grande.

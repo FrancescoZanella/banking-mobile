@@ -6,6 +6,7 @@ import 'package:bankingmobile/core/money.dart';
 import 'package:bankingmobile/data/database.dart';
 import 'package:bankingmobile/data/defaults.dart';
 import 'package:bankingmobile/domain/categorize.dart';
+import 'package:bankingmobile/sync/schedule.dart';
 import 'package:bankingmobile/sync/sync.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
@@ -250,5 +251,19 @@ void main() {
     await initDb(db);
     expect(await scalar(db, 'SELECT is_internal FROM transactions'), 1);
     expect(await getSetting(db, 'classifier_version'), '$classifierVersion');
+  });
+
+  test('sync alle 7, 14 e 23 ora italiana, ora legale compresa', () {
+    // Estate (UTC+2): le 14 italiane sono le 12 UTC.
+    expect(nextSyncSlot(DateTime.utc(2026, 7, 10, 8)), DateTime.utc(2026, 7, 10, 12));
+    expect(nextSyncSlot(DateTime.utc(2026, 7, 10, 12)), DateTime.utc(2026, 7, 10, 21));
+    // Dopo le 23: le 7 del giorno dopo.
+    expect(nextSyncSlot(DateTime.utc(2026, 7, 10, 21, 30)), DateTime.utc(2026, 7, 11, 5));
+    // Inverno (UTC+1).
+    expect(nextSyncSlot(DateTime.utc(2026, 12, 31, 22, 30)), DateTime.utc(2027, 1, 1, 6));
+    // Ultima domenica di ottobre 2026 (25/10): le 7 sono già ora solare.
+    expect(nextSyncSlot(DateTime.utc(2026, 10, 24, 22)), DateTime.utc(2026, 10, 25, 6));
+    expect(italyOffset(DateTime.utc(2026, 3, 29, 0, 59)), const Duration(hours: 1));
+    expect(italyOffset(DateTime.utc(2026, 3, 29, 1)), const Duration(hours: 2));
   });
 }

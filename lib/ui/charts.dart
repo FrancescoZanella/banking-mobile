@@ -367,3 +367,38 @@ class NetWorthChart extends StatelessWidget {
     );
   }
 }
+
+/// Barre orizzontali divergenti attorno allo zero: rosse a sinistra (negativo),
+/// verdi a destra (positivo), lunghe in proporzione al valore più grande.
+class DivergingBar extends StatelessWidget {
+  const DivergingBar({super.key, required this.value, required this.max, this.height = 6});
+  final int value;
+  final int max;
+  final double height;
+
+  @override
+  Widget build(BuildContext context) {
+    final share = max == 0 ? 0.0 : (value.abs() / max).clamp(0.0, 1.0);
+    Widget half(bool active, Alignment align) => Expanded(
+          child: Container(
+            height: height,
+            color: AppColors.surface2,
+            alignment: align,
+            child: active
+                ? FractionallySizedBox(
+                    widthFactor: share,
+                    child: Container(color: value < 0 ? AppColors.neg : AppColors.pos),
+                  )
+                : null,
+          ),
+        );
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(height / 2),
+      child: Row(children: [
+        half(value < 0, Alignment.centerRight),
+        Container(width: 2, height: height + 4, color: AppColors.muted),
+        half(value > 0, Alignment.centerLeft),
+      ]),
+    );
+  }
+}

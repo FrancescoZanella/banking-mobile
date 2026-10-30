@@ -95,8 +95,9 @@ void main() {
     expect((page.spent, page.received, page.count), (1500, 10000, 3));
     expect(chipLabels(october, [], [])['period'], '01/10/26 – 31/10/26');
 
-    final labels = chipLabels(const TxFilter(direction: 'in', category: 'none'), [], []);
+    final labels = chipLabels(const TxFilter(direction: 'in', categories: {'none'}), [], []);
     expect(labels, {'category': 'Senza categoria', 'direction': 'Entrate'});
+    expect(withoutGroup(const TxFilter(direction: 'in', categories: {'none'}), 'direction').direction, isNull);
     expect((await loadTransactions(db, const TxFilter(q: 'edic'))).count, 1);
     expect((await loadTransactions(db, const TxFilter(min: '6', max: '50'))).count, 1);
 
@@ -129,7 +130,7 @@ void main() {
     expect(page.count, 2);
     expect((page.spent, page.days.single.$3), (2000, -2000)); // tutti i conti: escluso
     // Guardando solo quel conto il giroconto è un'uscita vera.
-    final own = await loadTransactions(db, TxFilter(account: acc, from: '2026-10-01', to: '2026-10-31'));
+    final own = await loadTransactions(db, TxFilter(accounts: {acc}, from: '2026-10-01', to: '2026-10-31'));
     expect((own.spent, own.days.single.$3), (52000, -52000));
 
     await setCategory(db, '$acc|e|a', other);
@@ -198,7 +199,30 @@ void main() {
     expect(source, 'manual');
   });
 
-  testWidgets('Movimenti: chip attivi, «Azzera filtri», totali e gruppi per giorno', (tester) async {
+  test('filtri a scelta multipla: più conti e più categorie insieme', () async {
+    final a = await addAccount(db, bankKey: 'zeta', uid: 'u-a', iban: 'IT11');
+    final b = await addAccount(db, bankKey: 'theta', uid: 'u-b', iban: 'IT02');
+    final c = await addAccount(db, bankKey: 'beta', uid: 'u-c', iban: 'IT03');
+    await storeTransactions(db, a, [tx('10', ref: 'a1', name: 'Bar', day: '2026-10-02')], '2026-01-01');
+    await storeTransactions(db, b, [tx('20', ref: 'b1', name: 'Farmacia', day: '2026-10-03')], '2026-01-01');
+    await storeTransactions(db, c, [tx('30', ref: 'c1', name: 'Libreria', day: '2026-10-04')], '2026-01-01');
+    final salute = await categoryId('Salute'), spesa = await categoryId('Spesa alimentare');
+    await setCategory(db, '$a|e|a1', salute);
+    await setCategory(db, '$b|e|b1', spesa);
+    await db.update('transactions', {'category_id': null}, where: 'id = ?', whereArgs: ['$c|e|c1']);
+
+    expect((await loadTransactions(db, TxFilter(accounts: {a, b}))).count, 2);
+    expect((await loadTransactions(db, TxFilter(categories: {'$salute', '$spesa'}))).count, 2);
+    expect((await loadTransactions(db, TxFilter(categories: {'$salute', 'none'}))).count, 2);
+    expect((await loadTransactions(db, TxFilter(accounts: {a, b}, categories: {'$spesa'}))).count, 1);
+
+    final accounts = await filterAccounts(db), categories = await allCategories(db);
+    expect(chipLabels(TxFilter(accounts: {a, b}, categories: {'$salute', 'none'}), accounts, categories),
+        {'account': '2 conti', 'category': '2 categorie'});
+    expect(chipLabels(TxFilter(categories: {'$salute'}), accounts, categories)['category'], 'Salute');
+  });
+
+  testWidgets('Movimenti: pannello filtri, pillole attive, «Azzera», totali e gruppi per giorno', (tester) async {
     await tester.runAsync(() async {
       final acc = await addAccount(db);
       await storeTransactions(db, acc, [
@@ -221,10 +245,13 @@ void main() {
     expect(find.byKey(const Key('day-2026-10-03')), findsOneWidget);
     expect(find.text('01/10/26 – 31/10/26'), findsOneWidget);
 
-    await tester.tap(find.byKey(const Key('chip-direction')));
+    await tester.tap(find.byKey(const Key('open-filters')));
     await settle(tester);
-    await tester.tap(find.text('Entrate').last);
+    await tester.tap(find.descendant(of: find.byKey(const Key('direction')), matching: find.text('Entrate')));
     await settle(tester);
+    await tester.tap(find.byKey(const Key('apply-filters')));
+    await settle(tester);
+    expect(find.byKey(const Key('chip-direction')), findsOneWidget);
     expect(find.text('Rimborso'), findsOneWidget);
     expect(find.text('Bar'), findsNothing);
 

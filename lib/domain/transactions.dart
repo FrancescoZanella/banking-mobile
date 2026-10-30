@@ -31,12 +31,13 @@ int? amountCents(String? value) {
   return parsed == null || parsed.isNaN || parsed.isInfinite ? null : (parsed * 100).round();
 }
 
-/// Filtri della lista Movimenti (i parametri della pagina web).
+/// Filtri della lista Movimenti (i parametri della pagina web). Conti e
+/// categorie si possono scegliere in più insieme.
 class TxFilter {
   const TxFilter({
     this.q = '',
-    this.account,
-    this.category,
+    this.accounts = const {},
+    this.categories = const {},
     this.period,
     this.from,
     this.to,
@@ -47,15 +48,15 @@ class TxFilter {
   });
 
   final String q;
-  final int? account;
+  final Set<int> accounts;
 
-  /// Id della categoria, oppure 'none' per «Senza categoria».
-  final String? category;
+  /// Id delle categorie, più 'none' per «Senza categoria».
+  final Set<String> categories;
   final String? period;
   final String? from;
   final String? to;
 
-  /// 'in' o 'out'.
+  /// 'in' o 'out'; null = entrambi.
   final String? direction;
   final String? min;
   final String? max;
@@ -67,8 +68,8 @@ class TxFilter {
 
   TxFilter copyWith({
     String? q,
-    Object? account = _unset,
-    Object? category = _unset,
+    Set<int>? accounts,
+    Set<String>? categories,
     Object? period = _unset,
     Object? from = _unset,
     Object? to = _unset,
@@ -79,8 +80,8 @@ class TxFilter {
   }) =>
       TxFilter(
         q: q ?? this.q,
-        account: account == _unset ? this.account : account as int?,
-        category: category == _unset ? this.category : category as String?,
+        accounts: accounts ?? this.accounts,
+        categories: categories ?? this.categories,
         period: period == _unset ? this.period : period as String?,
         from: from == _unset ? this.from : from as String?,
         to: to == _unset ? this.to : to as String?,
@@ -91,6 +92,9 @@ class TxFilter {
       );
 
   bool get _hasRange => (from ?? '').isNotEmpty || (to ?? '').isNotEmpty;
+
+  /// Un conto solo: i giroconti contano come movimenti veri.
+  bool get singleAccount => accounts.length == 1;
 
   /// Il periodo tradotto in dal/al; un intervallo esplicito vince sulla scorciatoia.
   (String?, String?) range([DateTime? now]) {
@@ -109,15 +113,19 @@ class TxFilter {
 /// Query SQL con i filtri; stesso ordine e stesse colonne del web.
 (String, List<Object?>) buildQuery(TxFilter f, [DateTime? now]) {
   final where = <String>[], params = <Object?>[];
-  if (f.account != null) {
-    where.add('t.account_id = ?');
-    params.add(f.account);
+  String marks(int n) => List.filled(n, '?').join(', ');
+  if (f.accounts.isNotEmpty) {
+    where.add('t.account_id IN (${marks(f.accounts.length)})');
+    params.addAll(f.accounts);
   }
-  if (f.category == 'none') {
-    where.add('t.category_id IS NULL');
-  } else if (int.tryParse(f.category ?? '') case final id?) {
-    where.add('t.category_id = ?');
-    params.add(id);
+  final ids = [for (final c in f.categories) ?int.tryParse(c)];
+  final none = f.categories.contains('none');
+  if (none || ids.isNotEmpty) {
+    where.add('(${[
+      if (none) 't.category_id IS NULL',
+      if (ids.isNotEmpty) 't.category_id IN (${marks(ids.length)})',
+    ].join(' OR ')})');
+    params.addAll(ids);
   }
   final (from, to) = f.range(now);
   if (_dateRe.hasMatch(from ?? '')) {
@@ -152,7 +160,7 @@ class TxFilter {
 class TxPage {
   const TxPage(this.days, this.count, this.spent, this.received, this.shown);
 
-  /// (giorno, movimenti, totale del giorno; giroconti solo filtrando un conto).
+  /// (giorno, movimenti, totale del giorno; giroconti solo filtrando un conto solo).
   final List<(String?, List<Map<String, Object?>>, int)> days;
   final int count;
   final int spent;
@@ -168,7 +176,7 @@ Future<TxPage> loadTransactions(DatabaseExecutor db, TxFilter f, {int page = 1, 
   // Giroconti: neutri sui totali di tutti i conti, reali guardando un conto solo.
   // Investimenti: mai uscite o spese (restano solo nell'elenco). Giroconti: fuori
   // dai totali di tutti i conti, veri guardando un conto solo.
-  final internal = ' AND $noInvestmentSql${f.account != null ? '' : ' AND is_internal = 0'}';
+  final internal = ' AND $noInvestmentSql${f.singleAccount ? '' : ' AND is_internal = 0'}';
   final summary = (await db.rawQuery(
     'SELECT count(*) AS n, '
     'coalesce(-sum(CASE WHEN amount_cents < 0$internal THEN amount_cents END), 0) AS spent, '
@@ -185,7 +193,7 @@ Future<TxPage> loadTransactions(DatabaseExecutor db, TxFilter f, {int page = 1, 
           day,
           items,
           items
-              .where((t) => t['category_investment'] != 1 && (f.account != null || t['is_internal'] != 1))
+              .where((t) => t['category_investment'] != 1 && (f.singleAccount || t['is_internal'] != 1))
               .fold(0, (s, t) => s + (t['amount_cents'] as int)),
         ),
     ],
@@ -203,19 +211,20 @@ String? _shortDate(String? value) {
   return '${two(d.day)}/${two(d.month)}/${two(d.year % 100)}';
 }
 
-/// Etichette dei chip attivi (chiave del chip → testo mostrato).
+/// Etichette dei filtri attivi (gruppo → testo della pillola).
 Map<String, String> chipLabels(TxFilter f, List<Map<String, Object?>> accounts,
     List<Map<String, Object?>> categories) {
   final labels = <String, String>{};
-  if (f.account != null) {
-    final a = accounts.where((a) => a['id'] == f.account);
-    labels['account'] = a.isEmpty ? 'Conto' : '${a.first['bank']} · ${a.first['label']}';
+  if (f.accounts.isNotEmpty) {
+    final a = accounts.where((a) => f.accounts.contains(a['id'])).toList();
+    labels['account'] = a.length == 1 ? '${a.first['bank']} · ${a.first['label']}' : '${f.accounts.length} conti';
   }
-  if (f.category == 'none') {
-    labels['category'] = 'Senza categoria';
-  } else if (int.tryParse(f.category ?? '') case final id?) {
-    final c = categories.where((c) => c['id'] == id);
-    labels['category'] = c.isEmpty ? 'Categoria' : c.first['name'] as String;
+  if (f.categories.length == 1) {
+    final only = f.categories.first;
+    final c = categories.where((c) => '${c['id']}' == only);
+    labels['category'] = only == 'none' ? 'Senza categoria' : (c.isEmpty ? 'Categoria' : c.first['name'] as String);
+  } else if (f.categories.isNotEmpty) {
+    labels['category'] = '${f.categories.length} categorie';
   }
   if (periodShortcuts.containsKey(f.period) && !f._hasRange) {
     labels['period'] = periodShortcuts[f.period]!.$1;
@@ -228,13 +237,24 @@ Map<String, String> chipLabels(TxFilter f, List<Map<String, Object?>> accounts,
   }
   if ((f.min ?? '').isNotEmpty || (f.max ?? '').isNotEmpty) {
     final low = amountCents(f.min), high = amountCents(f.max);
-    labels['amount'] = '${low != null ? 'da ${money(low)}' : ''}${high != null ? ' a ${money(high)}' : ''}';
+    labels['amount'] = [if (low != null) 'da ${money(low)}', if (high != null) 'a ${money(high)}'].join(' ');
   }
   if (f.hidden) labels['extra'] = 'Con conti nascosti';
   return labels;
 }
 
-/// Conti per il chip «Conto», anche quelli nascosti.
+/// Toglie un gruppo di filtri (la ✕ sulla sua pillola).
+TxFilter withoutGroup(TxFilter f, String group) => switch (group) {
+      'account' => f.copyWith(accounts: const {}),
+      'category' => f.copyWith(categories: const {}),
+      'period' => f.copyWith(period: null, from: null, to: null),
+      'direction' => f.copyWith(direction: null),
+      'amount' => f.copyWith(min: null, max: null),
+      'extra' => f.copyWith(hidden: false),
+      _ => f,
+    };
+
+/// Conti per il filtro «Conti», anche quelli nascosti.
 Future<List<Map<String, Object?>>> filterAccounts(DatabaseExecutor db) => db.rawQuery(
       'SELECT a.id, coalesce(a.nickname, a.name, b.label) AS label, b.label AS bank, a.hidden '
       'FROM accounts a JOIN banks b ON b.key = a.bank_key ORDER BY b.label, a.id',

@@ -35,18 +35,20 @@ il conto titoli non è leggibile tramite Enable Banking.
 
 Quando una sincronizzazione porta movimenti nuovi che le regole non hanno saputo classificare (finiti in
 *Altre spese*, *Altre entrate* o senza categoria), arriva una **notifica per ciascuno**, per esempio
-«Bar Centrale · -4,50 €». Tocca la notifica: l'app si apre (con l'impronta, se era bloccata)
+«Bar Centrale · -4,50 €». Sotto ci sono i pulsanti delle **3 categorie che scegli più spesso** (per
+le entrate, quelle di entrata): toccane uno e la categoria è salvata, senza aprire l'app e senza creare
+regole. Per le altre categorie tocca la notifica: l'app si apre (con l'impronta, se era bloccata)
 direttamente sul **dettaglio del movimento**, dove scegli la categoria e, se vuoi, una regola per i
 prossimi.
 
-- **Quando:** dopo ogni sincronizzazione (all'apertura e in background ogni ~12 ore). Non è in tempo
+- **Quando:** dopo ogni sincronizzazione (alle 7, alle 14 e alle 23). Non è in tempo
   reale: la banca rende disponibili i movimenti con qualche ora o giorno di ritardo.
 - **Anche se «in attesa»:** la notifica arriva alla prima comparsa del movimento; la categoria che
   scegli resta quando la banca lo contabilizza, senza una seconda notifica. Se nel frattempo cambia
   l'importo (es. la mancia al ristorante), arriva come movimento nuovo.
 - **Mai notifiche** per giroconti, conti nascosti, movimenti già riconosciuti dalle regole, movimenti
   più vecchi di 7 giorni e per lo storico scaricato collegando o rinnovando una banca.
-- **Schermata di blocco:** esercente e importo restano nascosti finché non sblocchi il telefono.
+- **Schermata di blocco:** esercente, importo e pulsanti restano nascosti finché non sblocchi il telefono.
 - **Riquadro «Da categorizzare» in Home:** gli stessi movimenti dell'ultimo mese, anche se hai
   ignorato la notifica. Sparisce quando non ce ne sono più.
 
@@ -67,9 +69,11 @@ Scegliere *Giroconti* segna il movimento come giroconto. Per i giroconti non si 
 
 ## Movimenti
 
-Ricerca per esercente o descrizione e **filtri** a chip: Conto, Categoria, Periodo (scorciatoie o
-intervallo dal/al), Tipo (entrate/uscite), Importo, Altro (conti nascosti). *Azzera filtri* li toglie
-tutti tranne la ricerca. In alto i totali, sotto i movimenti per giorno con il totale del giorno,
+Ricerca per esercente o descrizione; accanto, il pulsante **Filtri** (con il numero di quelli attivi)
+apre un pannello con Periodo (scorciatoie o intervallo dal/al), Tipo (tutti, uscite, entrate), Conti,
+Categorie, Importo e conti nascosti. **Conti e categorie si possono scegliere in più insieme.** Si
+applicano con *Mostra risultati*. I filtri attivi restano sotto la ricerca come pillole: toccane una per
+riaprire il pannello, la ✕ la toglie, *Azzera* le toglie tutte tranne la ricerca. In alto i totali, sotto i movimenti per giorno con il totale del giorno,
 dal più recente (le banche non danno l'ora: nello stesso giorno prima quelli arrivati per ultimi);
 *Mostra altri* allunga l'elenco. L'icona di condivisione esporta in **CSV** i movimenti filtrati.
 
@@ -89,6 +93,9 @@ agosto 2026).
 Settimana, mese o anno, con le frecce per spostarsi:
 
 - entrate, uscite, risparmio e tasso di risparmio;
+- **saldo per categoria**: per ogni categoria le entrate meno le uscite del periodo (es. 3.000 € spesi
+  e 2.000 € rientrati = -1.000 €), dalla più negativa alla più positiva, con barre rosse e verdi;
+  tocca una categoria per vederne i movimenti;
 - **uscite per categoria** ed **entrate per categoria**, con importo, numero di movimenti e quota del
   totale; tocca una categoria per vederne i movimenti del periodo;
 - grafico di entrate e uscite per mese con la linea del risparmio, andamento del patrimonio;
@@ -108,12 +115,14 @@ non vengono mai sovrascritte.
 - Per ogni banca: stato del consenso, **Rinnova**, **Scollega** (revoca il consenso, lo storico resta),
   **Elimina** (cancella tutto, va scritto il nome della banca).
 - Tocca un conto per **rinominarlo** o **nasconderlo** da totali e grafici.
-- **Sincronizza** forza un aggiornamento dei conti non aggiornati da più di 12 ore; **Storico sync**
-  mostra le ultime sincronizzazioni.
+- **Storico sync** mostra le ultime sincronizzazioni. Non c'è un tasto per sincronizzare a mano.
 
 ## Sincronizzazione e consensi
 
-- All'apertura e in background ogni ~12 ore, per i conti non aggiornati da più di 12 ore (limite PSD2).
+- Solo in automatico, **alle 7, alle 14 e alle 23 (ora italiana)**: 3 accessi al giorno, sotto il limite
+  PSD2 di circa 4. Non all'apertura dell'app né a mano. Android può ritardarla di qualche minuto, di
+  più se il telefono è in risparmio energetico; senza rete parte appena torna.
+- Collegando o rinnovando una banca lo storico si scarica subito.
 - Il consenso dura il massimo concesso dalla banca (~180 giorni). Due settimane prima della scadenza
   compare l'avviso e arriva una notifica (solo nome della banca e giorni, mai importi).
 
@@ -146,7 +155,7 @@ dall'IBAN dei tuoi conti o dal tuo nome. Se la banca non li indica, scegli *Giro
 movimento.
 
 **Non arrivano movimenti nuovi.** Controlla in Conti lo stato del consenso (se scaduto: *Rinnova*) e lo
-*Storico sync*. Ogni conto si aggiorna al massimo ogni 12 ore, per il limite delle API PSD2.
+*Storico sync*. I conti si aggiornano solo alle 7, alle 14 e alle 23, per il limite delle API PSD2.
 
 **Non arrivano le notifiche dei movimenti.** Controlla che le notifiche dell'app siano attive e che
 la batteria sia su *Nessuna restrizione* (vedi sopra). Arrivano solo per i movimenti che le regole non

@@ -258,7 +258,7 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
               borderRadius: BorderRadius.circular(12),
               onTap: () => openTransactions(
                 context,
-                TxFilter(category: c.id == null ? 'none' : '${c.id}', direction: 'out', from: from, to: to),
+                TxFilter(categories: {c.id == null ? 'none' : '${c.id}'}, direction: 'out', from: from, to: to),
               ),
               child: Padding(
                 padding: const EdgeInsets.symmetric(vertical: 8),

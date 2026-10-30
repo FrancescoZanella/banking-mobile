@@ -19,7 +19,8 @@ flussi di cassa per categoria. È la versione per telefono della dashboard web
 
 - **Home:** patrimonio totale, schede dei conti, avvisi sui consensi, spese del mese, ultimi
   movimenti raggruppati per giorno.
-- **Movimenti:** ricerca, filtri (conto, categoria, periodo, tipo, importo), totali, export CSV.
+- **Movimenti:** ricerca, pannello filtri (periodo, tipo, conti e categorie anche in più insieme,
+  importo), totali, export CSV.
   Dal dettaglio di un movimento si cambia la categoria, anche con una regola per i movimenti futuri.
 - **Analisi:** settimana, mese o anno, confronto con il periodo precedente allo stesso giorno, curva
   cumulata, ultimi 12 mesi, categorie ed esercenti.
@@ -32,7 +33,7 @@ flussi di cassa per categoria. È la versione per telefono della dashboard web
   «Investito da agosto» in Home.
 - **Dati dal 1 agosto 2026:** i movimenti precedenti non vengono scaricati né conservati.
 - **Notifiche dei movimenti da categorizzare:** per ogni movimento nuovo che le regole non riconoscono;
-  il tocco apre il dettaglio per scegliere la categoria.
+  pulsanti con le 3 categorie più scelte (si salva senza aprire l'app), oppure tocco per aprire il dettaglio.
 
 ## Sicurezza in breve
 
@@ -42,8 +43,8 @@ flussi di cassa per categoria. È la versione per telefono della dashboard web
 - **Niente backup** su Google, **niente screenshot**, **solo HTTPS** con le CA di sistema, nessuna porta aperta.
 - Login con la banca in una scheda del browser **in incognito**; ritorno nell'app tramite
   **App Link verificato** e `state` monouso.
-- **Consenso bancario ~180 giorni:** sincronizzazione automatica (all'apertura e ogni ~12 ore in
-  background) e notifica prima della scadenza.
+- **Consenso bancario ~180 giorni:** sincronizzazione automatica alle 7, alle 14 e alle 23 (ora
+  italiana) e notifica prima della scadenza.
 
 Dettagli, prove e rischi residui in [docs/sicurezza.md](docs/sicurezza.md).
 

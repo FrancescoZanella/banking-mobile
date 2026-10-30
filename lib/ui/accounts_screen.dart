@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../app/services.dart';
 import '../bank/bank_service.dart';
-import '../core/config.dart';
 import '../core/dates.dart';
 import '../core/money.dart';
 import '../domain/reports.dart';
@@ -253,18 +252,14 @@ class _AccountsScreenState extends State<AccountsScreen> {
                       const SizedBox(height: 18),
                       Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
                         _RoundAction(
-                          icon: Icons.refresh,
-                          label: s.sync.running ? 'In corso…' : 'Sincronizza',
-                          primary: true,
-                          onTap: s.sync.running ? null : () async => _flash(await s.bank.syncNow()),
-                        ),
-                        _RoundAction(icon: Icons.add, label: 'Collega banca', onTap: () => _connectNew(data)),
+                            icon: Icons.add, label: 'Collega banca', primary: true, onTap: () => _connectNew(data)),
                         _RoundAction(icon: Icons.history, label: 'Storico sync', onTap: () => _showRuns(data.runs)),
                       ]),
                       const SizedBox(height: 14),
                       Text(
-                        "Aggiornamento automatico all'apertura e in background, al massimo ogni "
-                        '${AppConfig.minSyncInterval.inHours} ore per conto.',
+                        s.sync.running
+                            ? 'Sincronizzazione in corso…'
+                            : 'Aggiornamento automatico alle 7, alle 14 e alle 23 (ora italiana).',
                         textAlign: TextAlign.center,
                         style: const TextStyle(color: AppColors.muted, fontSize: 12),
                       ),

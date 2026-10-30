@@ -12,7 +12,7 @@ import 'package:bankingmobile/domain/categorize.dart';
 import 'package:bankingmobile/domain/to_categorize.dart';
 import 'package:bankingmobile/domain/transactions.dart';
 import 'package:bankingmobile/security/app_lock.dart';
-import 'package:bankingmobile/sync/background.dart' show movementNotificationId;
+import 'package:bankingmobile/sync/background.dart' show categoryFromAction, movementNotificationId;
 import 'package:bankingmobile/sync/sync.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -166,6 +166,27 @@ void main() {
       final runner = SyncRunner(db, FakeApi(), afterSync: (_) async => calls++);
       await runner.start(onlyDue: false);
       expect(calls, 1);
+    });
+
+    test('pulsanti della notifica: le 3 categorie più scelte, dello stesso tipo', () async {
+      final acc = await addAccount(db);
+      await storeTransactions(db, acc, [
+        for (var i = 0; i < 6; i++) tx('5', ref: 'm$i', name: 'Negozio $i', day: daysAgo(1)),
+      ], '2026-01-01');
+      final salute = await categoryId('Salute'), viaggi = await categoryId('Svago e viaggi');
+      final svago = await categoryId('Shopping'), altre = await categoryId('Altre spese');
+      for (final (i, c) in [salute, salute, salute, viaggi, viaggi, svago].indexed) {
+        await setCategory(db, '$acc|e|m$i', c);
+      }
+      final out = [for (final c in await quickCategories(db, income: false)) c['id']];
+      expect(out, [salute, viaggi, svago]);
+      expect(out, isNot(contains(altre)));
+      // Entrate: mai «Altre entrate» né i giroconti; tra le predefinite resta Stipendio.
+      expect([for (final c in await quickCategories(db, income: true)) c['name']], ['Stipendio']);
+
+      expect(categoryFromAction('cat:$salute'), salute);
+      expect(categoryFromAction('cat:x'), isNull);
+      expect(categoryFromAction(null), isNull);
     });
 
     test('id delle notifiche: stabili, distinti, lontani da quelli riservati', () {

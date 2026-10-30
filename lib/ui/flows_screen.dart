@@ -27,11 +27,12 @@ class FlowsScreen extends StatefulWidget {
 }
 
 class _FlowsData {
-  _FlowsData(this.totals, this.invested, this.byCategory, this.moved, this.series, this.trend, this.sources,
-      this.alerts);
+  _FlowsData(this.totals, this.invested, this.byCategory, this.net, this.moved, this.series, this.trend,
+      this.sources, this.alerts);
   final cashflow.Totals totals;
   final int invested;
   final ({List<cashflow.CategoryFlow> expense, List<cashflow.CategoryFlow> income}) byCategory;
+  final List<cashflow.CategoryNet> net;
   final ({int cents, int n}) moved;
   final List<(DateTime, cashflow.Totals)> series;
   final ({List<DateTime> months, List<int> values}) trend;
@@ -84,6 +85,7 @@ class _FlowsScreenState extends State<FlowsScreen> {
       await cashflow.totals(db, period.start, until),
       await cashflow.invested(db, period.start, until),
       await cashflow.byCategory(db, period.start, until),
+      await cashflow.netByCategory(db, period.start, until),
       await cashflow.movedBetweenAccounts(db, period.start, until),
       // Grafici dal mese di partenza dei dati, al massimo 12 mesi.
       await cashflow.monthly(db, lastMonth, n: monthsFromStart(lastMonth)),
@@ -123,6 +125,8 @@ class _FlowsScreenState extends State<FlowsScreen> {
                   const Padding(padding: EdgeInsets.all(32), child: Center(child: CircularProgressIndicator()))
                 else ...[
                   _tiles(data),
+                  const SizedBox(height: 16),
+                  _net(data.net),
                   const SizedBox(height: 16),
                   _categories('Uscite per categoria', data.byCategory.expense, 'out',
                       'Nessuna uscita in questo periodo.', const Key('expense-by-category')),
@@ -194,6 +198,55 @@ class _FlowsScreenState extends State<FlowsScreen> {
     );
   }
 
+  /// Entrate meno uscite per categoria, dalla più negativa; tocco → Movimenti filtrati.
+  Widget _net(List<cashflow.CategoryNet> rows) {
+    final from = iso(_period.start), to = iso(addDays(_period.end, -1));
+    final max = rows.fold<int>(0, (m, c) => c.net.abs() > m ? c.net.abs() : m);
+    return Card(
+      key: const Key('net-by-category'),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          const Text('Saldo per categoria', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600)),
+          const Text('entrate meno uscite di ogni categoria',
+              style: TextStyle(color: AppColors.muted, fontSize: 13)),
+          const SizedBox(height: 8),
+          if (rows.isEmpty)
+            const Padding(
+              padding: EdgeInsets.only(bottom: 8),
+              child: Text('Nessun movimento in questo periodo.', style: TextStyle(color: AppColors.muted)),
+            ),
+          for (final c in rows)
+            InkWell(
+              key: Key('net-${c.id ?? 'none'}'),
+              borderRadius: BorderRadius.circular(12),
+              onTap: () => openTransactions(
+                  context, TxFilter(categories: {c.id == null ? 'none' : '${c.id}'}, from: from, to: to)),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 7),
+                child: Row(children: [
+                  CategoryAvatar(icon: c.icon, color: c.color, size: 30),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      Row(children: [
+                        Expanded(child: Text(c.name, overflow: TextOverflow.ellipsis)),
+                        Text(signedMoney(c.net),
+                            style: TextStyle(
+                                fontWeight: FontWeight.w600, color: c.net < 0 ? AppColors.neg : AppColors.pos)),
+                      ]),
+                      const SizedBox(height: 6),
+                      DivergingBar(value: c.net, max: max),
+                    ]),
+                  ),
+                ]),
+              ),
+            ),
+        ]),
+      ),
+    );
+  }
+
   /// Uscite o entrate del periodo per categoria; tocco → Movimenti filtrati.
   Widget _categories(String title, List<cashflow.CategoryFlow> rows, String direction, String empty, Key key) {
     final from = iso(_period.start), to = iso(addDays(_period.end, -1));
@@ -220,7 +273,7 @@ class _FlowsScreenState extends State<FlowsScreen> {
               borderRadius: BorderRadius.circular(12),
               onTap: () => openTransactions(
                 context,
-                TxFilter(category: c.id == null ? 'none' : '${c.id}', direction: direction, from: from, to: to),
+                TxFilter(categories: {c.id == null ? 'none' : '${c.id}'}, direction: direction, from: from, to: to),
               ),
               child: Padding(
                 padding: const EdgeInsets.symmetric(vertical: 8),

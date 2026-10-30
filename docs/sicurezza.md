@@ -135,7 +135,7 @@ un riavvio, Flussi, investimenti, dati dal 1 agosto 2026.
 | Log nel codice dell'app (`print`, `debugPrint`, `Log`) | ✅ nessuno |
 | Log dei plugin nella release | ✅ `Log.d`/`Log.v` tolti da R8: `app_links` scriveva `code` e `state` del ritorno dalla banca |
 | SQL | ✅ nessuna query costruita con dati dell'utente: solo costanti del codice, i valori sono parametri |
-| Notifiche dei movimenti | ✅ visibilità privata (nascoste a telefono bloccato); il tocco apre il dettaglio solo dopo lo sblocco; nessuna azione dalla notifica |
+| Notifiche dei movimenti | ✅ visibilità privata (contenuto e pulsanti nascosti a telefono bloccato); il tocco apre il dettaglio solo dopo lo sblocco; i pulsanti delle categorie (dal 30/10/2026) assegnano solo la categoria a quel movimento, tramite un receiver non esportato |
 | Ritorno dalla banca dopo un riavvio | ✅ accettato solo con `state` valido e monouso; il link vecchio rimesso da Android è scartato; esito mostrato dopo lo sblocco |
 | Dati prima del 1 agosto 2026 | ✅ cancellati all'avvio, mai più scaricati |
 | Dipendenze (OSV) | ✅ nessuna vulnerabilità nota (100 pacchetti Dart, SQLCipher 4.10.0, androidx.browser 1.9.0) |

@@ -12,9 +12,10 @@ class AppConfig {
   /// Validità dello `state` di un collegamento in corso.
   static const pendingAuthorizationTtl = Duration(seconds: 1200);
 
-  /// Limite PSD2: circa 4 accessi al giorno senza utente presente, quindi al
-  /// massimo una sincronizzazione ogni 12 ore per conto.
-  static const minSyncInterval = Duration(hours: 12);
+  /// Limite PSD2: circa 4 accessi al giorno senza utente presente. La sync gira
+  /// solo alle 7, 14 e 23 (sync/schedule.dart); questo minimo evita un doppio
+  /// accesso se un orario parte in ritardo o subito dopo un collegamento.
+  static const minSyncInterval = Duration(hours: 4);
   static const overlapDays = 10;
   static const backfillDays = 730;
   static const expiryWarningDays = 14;

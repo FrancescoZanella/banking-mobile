@@ -2,6 +2,7 @@
 import 'package:bankingmobile/core/dates.dart';
 import 'package:bankingmobile/domain/cashflow.dart';
 import 'package:bankingmobile/domain/categorize.dart';
+import 'package:bankingmobile/domain/transactions.dart';
 import 'package:bankingmobile/sync/sync.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -56,6 +57,32 @@ void main() {
 
     final series = await monthly(db, day(2026, 10, 1));
     expect((series.length, series.last.$2.income), (12, 206000));
+    await db.close();
+  });
+
+  test('saldo per categoria: entrate meno uscite, dal più negativo; giroconti e zeri fuori', () async {
+    final db = await openTestDb();
+    final acc = await addAccount(db, bankKey: 'theta', uid: 'u1', iban: 'IT01');
+    await addAccount(db, bankKey: 'zeta', uid: 'u2', iban: 'IT12');
+    await storeTransactions(db, acc, [
+      tx('3000', ref: 'v1', name: 'Agenzia Viaggi', day: '2026-10-02'),
+      tx('2000', indicator: 'CRDT', ref: 'v2', name: 'Amico', day: '2026-10-03'),
+      tx('50', ref: 'f1', name: 'Farmacia', day: '2026-10-04'),
+      tx('50', indicator: 'CRDT', ref: 'f2', name: 'Rimborso farmacia', day: '2026-10-05'),
+      tx('2000', indicator: 'CRDT', ref: 's', name: 'ACME SPA', day: '2026-10-24', remittance: ['Stipendio']),
+      tx('300', ref: 'g', name: 'Me', iban: 'IT12', day: '2026-10-13'), // giroconto, escluso
+    ], '2026-01-01');
+    await recategorize(db);
+    Future<int> id(String name) async =>
+        (await db.rawQuery('SELECT id FROM categories WHERE name = ?', [name])).first['id'] as int;
+    final viaggi = await id('Svago e viaggi'), salute = await id('Salute');
+    await setCategory(db, '$acc|e|v1', viaggi);
+    await setCategory(db, '$acc|e|v2', viaggi);
+    await setCategory(db, '$acc|e|f1', salute);
+    await setCategory(db, '$acc|e|f2', salute);
+
+    final net = await netByCategory(db, day(2026, 10, 1), day(2026, 11, 1));
+    expect([for (final c in net) (c.name, c.net)], [('Svago e viaggi', -100000), ('Stipendio', 200000)]);
     await db.close();
   });
 }

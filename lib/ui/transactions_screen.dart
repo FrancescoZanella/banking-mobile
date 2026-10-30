@@ -19,7 +19,7 @@ Future<void> shareCsvFile(String csv) => SharePlus.instance.share(ShareParams(
       fileNameOverrides: ['movimenti.csv'],
     ));
 
-/// Movimenti: ricerca, chip di filtro, totali, raggruppamento per giorno,
+/// Movimenti: ricerca, pannello dei filtri, totali, raggruppamento per giorno,
 /// «Mostra altri» ed export CSV. Come transactions.html del web.
 class TransactionsScreen extends StatefulWidget {
   const TransactionsScreen({super.key, this.initial = const TxFilter(), this.shareCsv = shareCsvFile});
@@ -113,27 +113,31 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                 ),
               ]),
               const SizedBox(height: 8),
-              TextField(
-                key: const Key('tx-search'),
-                controller: _search,
-                onChanged: _onSearch,
-                textInputAction: TextInputAction.search,
-                decoration: InputDecoration(
-                  hintText: 'Cerca esercente o descrizione',
-                  prefixIcon: const Icon(Icons.search),
-                  suffixIcon: _search.text.isEmpty
-                      ? null
-                      : IconButton(
-                          icon: const Icon(Icons.close),
-                          onPressed: () {
-                            _search.clear();
-                            _apply(_filter.copyWith(q: ''));
-                          },
-                        ),
+              Row(children: [
+                Expanded(
+                  child: TextField(
+                    key: const Key('tx-search'),
+                    controller: _search,
+                    onChanged: _onSearch,
+                    textInputAction: TextInputAction.search,
+                    decoration: InputDecoration(
+                      hintText: 'Cerca esercente o descrizione',
+                      prefixIcon: const Icon(Icons.search),
+                      suffixIcon: _search.text.isEmpty
+                          ? null
+                          : IconButton(
+                              icon: const Icon(Icons.close),
+                              onPressed: () {
+                                _search.clear();
+                                _apply(_filter.copyWith(q: ''));
+                              },
+                            ),
+                    ),
+                  ),
                 ),
-              ),
-              const SizedBox(height: 10),
-              if (data != null) _chips(data.$2),
+                if (data != null) ...[const SizedBox(width: 8), _filterButton(data.$2)],
+              ]),
+              if (data != null) _pills(data.$2),
               const SizedBox(height: 12),
               if (data != null) _tiles(data.$1),
             ]),
@@ -151,129 +155,73 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
     );
   }
 
-  Widget _chips(_Lists lists) {
-    final f = _filter;
-    final labels = chipLabels(f, lists.accounts, lists.categories);
-    Widget chip(String key, IconData icon, String label, Widget Function(BuildContext) panel, TxFilter Function() clear) {
-      final active = labels[key];
-      return Padding(
-        padding: const EdgeInsets.only(right: 8),
-        child: FilterChip(
-          key: Key('chip-$key'),
-          selected: active != null,
-          showCheckmark: false,
-          avatar: Icon(icon, size: 16),
-          label: Text(active ?? label),
-          onSelected: (_) => _openPanel(active ?? label, panel, active != null ? clear : null),
-        ),
-      );
-    }
+  /// Pulsante «Filtri» accanto alla ricerca, con il numero di filtri attivi.
+  Widget _filterButton(_Lists lists) {
+    final n = chipLabels(_filter, lists.accounts, lists.categories).length;
+    return IconButton.filled(
+      key: const Key('open-filters'),
+      tooltip: 'Filtri',
+      style: IconButton.styleFrom(
+        backgroundColor: n > 0 ? AppColors.accent : AppColors.surface2,
+        foregroundColor: AppColors.text,
+        fixedSize: const Size(48, 48),
+      ),
+      onPressed: () => _openFilters(lists),
+      icon: Badge(
+        isLabelVisible: n > 0,
+        label: Text('$n'),
+        backgroundColor: AppColors.text,
+        textColor: AppColors.bg,
+        child: const Icon(Icons.tune),
+      ),
+    );
+  }
 
-    final (from, to) = (f.from, f.to);
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: Row(children: [
-        // In testa, non in fondo alla riga: sul telefono resta sempre visibile.
-        if (labels.isNotEmpty)
-          Padding(
-            padding: const EdgeInsets.only(right: 8),
-            child: ActionChip(
-              key: const Key('clear-filters'),
-              avatar: const Icon(Icons.close, size: 16),
-              label: const Text('Azzera filtri'),
-              onPressed: () => _apply(f.cleared()),
-            ),
+  /// Filtri attivi come pillole piccole che vanno a capo; la ✕ toglie il gruppo.
+  Widget _pills(_Lists lists) {
+    final labels = chipLabels(_filter, lists.accounts, lists.categories);
+    if (labels.isEmpty) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.only(top: 10),
+      child: Wrap(spacing: 6, runSpacing: 6, children: [
+        for (final MapEntry(key: group, value: label) in labels.entries)
+          InputChip(
+            key: Key('chip-$group'),
+            label: Text(label),
+            labelStyle: const TextStyle(fontSize: 13),
+            visualDensity: VisualDensity.compact,
+            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            backgroundColor: AppColors.surface2,
+            side: BorderSide.none,
+            shape: const StadiumBorder(),
+            deleteIcon: const Icon(Icons.close, size: 14),
+            onPressed: () => _openFilters(lists),
+            onDeleted: () => _apply(withoutGroup(_filter, group)),
           ),
-        chip('account', Icons.account_balance_outlined, 'Conto', (ctx) => _options(ctx, [
-              for (final a in lists.accounts)
-                _Opt('${a['bank']} · ${a['label']}${a['hidden'] == 1 ? ' (nascosto)' : ''}', f.account == a['id'],
-                    () => f.copyWith(account: a['id'])),
-            ]), () => f.copyWith(account: null)),
-        chip('category', Icons.category_outlined, 'Categoria', (ctx) => _options(ctx, [
-              _Opt('Senza categoria', f.category == 'none', () => f.copyWith(category: 'none')),
-              for (final c in lists.categories)
-                _Opt(c['name'] as String, f.category == '${c['id']}', () => f.copyWith(category: '${c['id']}'),
-                    leading: CategoryAvatar(icon: c['icon'] as String?, color: c['color'] as String?, size: 28)),
-            ]), () => f.copyWith(category: null)),
-        chip('period', Icons.calendar_today_outlined, 'Periodo', (ctx) => _options(ctx, [
-              for (final e in periodShortcuts.entries)
-                _Opt(e.value.$1, f.period == e.key && from == null && to == null,
-                    () => f.copyWith(period: e.key, from: null, to: null)),
-              _Opt('Dal / al…', from != null || to != null, () => f, pickRange: true),
-            ]), () => f.copyWith(period: null, from: null, to: null)),
-        chip('direction', Icons.swap_vert, 'Tipo', (ctx) => _options(ctx, [
-              _Opt('Uscite', f.direction == 'out', () => f.copyWith(direction: 'out'),
-                  leading: const Icon(Icons.north_east)),
-              _Opt('Entrate', f.direction == 'in', () => f.copyWith(direction: 'in'),
-                  leading: const Icon(Icons.south_west)),
-            ]), () => f.copyWith(direction: null)),
-        chip('amount', Icons.euro, 'Importo', (ctx) => _AmountPanel(filter: f), () => f.copyWith(min: null, max: null)),
-        chip('extra', Icons.tune, 'Altro', (ctx) => _options(ctx, [
-              _Opt('Mostra conti nascosti', f.hidden, () => f.copyWith(hidden: !f.hidden),
-                  leading: Icon(f.hidden ? Icons.check_box : Icons.check_box_outline_blank)),
-            ]), () => f.copyWith(hidden: false)),
+        ActionChip(
+          key: const Key('clear-filters'),
+          label: const Text('Azzera', style: TextStyle(color: AppColors.accent, fontSize: 13)),
+          visualDensity: VisualDensity.compact,
+          materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          backgroundColor: Colors.transparent,
+          side: BorderSide.none,
+          shape: const StadiumBorder(),
+          onPressed: () => _apply(_filter.cleared()),
+        ),
       ]),
     );
   }
 
-  /// Pannello di un chip: restituisce i nuovi filtri, oppure null se annullato.
-  Future<void> _openPanel(String title, Widget Function(BuildContext) panel, TxFilter Function()? clear) async {
-    final result = await showModalBottomSheet<Object>(
+  Future<void> _openFilters(_Lists lists) async {
+    final result = await showModalBottomSheet<TxFilter>(
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
+      showDragHandle: true,
       backgroundColor: AppColors.surface,
-      builder: (ctx) => Padding(
-        padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
-        child: ConstrainedBox(
-          constraints: BoxConstraints(maxHeight: MediaQuery.of(ctx).size.height * .7),
-          child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 18, 20, 8),
-              child: Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
-            ),
-            Flexible(child: panel(ctx)),
-            if (clear != null)
-              ListTile(
-                leading: const Icon(Icons.close),
-                title: const Text('Togli filtro'),
-                onTap: () => Navigator.pop(ctx, clear()),
-              ),
-            const SizedBox(height: 8),
-          ]),
-        ),
-      ),
+      builder: (ctx) => _FiltersSheet(filter: _filter, lists: lists),
     );
-    if (!mounted) return;
-    if (result is TxFilter) _apply(result);
-    if (result == _pickRangeSignal) await _pickRange();
-  }
-
-  Widget _options(BuildContext ctx, List<_Opt> options) => ListView(
-        shrinkWrap: true,
-        children: [
-          for (final o in options)
-            ListTile(
-              leading: o.leading,
-              title: Text(o.label),
-              trailing: o.selected ? const Icon(Icons.check, color: AppColors.accent) : null,
-              onTap: () => Navigator.pop(ctx, o.pickRange ? _pickRangeSignal : o.apply()),
-            ),
-        ],
-      );
-
-  Future<void> _pickRange() async {
-    final now = today();
-    final from = parseIsoDay(_filter.from), to = parseIsoDay(_filter.to);
-    final range = await showDateRangePicker(
-      context: context,
-      firstDate: DateTime.utc(2000),
-      lastDate: now,
-      initialDateRange: from != null && to != null && !to.isBefore(from) ? DateTimeRange(start: from, end: to) : null,
-      helpText: 'Dal / al',
-    );
-    if (range == null) return;
-    _apply(_filter.copyWith(period: null, from: iso(range.start), to: iso(range.end)));
+    if (mounted && result != null) _apply(result);
   }
 
   Widget _tiles(TxPage page) {
@@ -350,27 +298,19 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
       ];
 }
 
-const _pickRangeSignal = 'pick-range';
-
-class _Opt {
-  _Opt(this.label, this.selected, this.apply, {this.leading, this.pickRange = false});
-  final String label;
-  final bool selected;
-  final TxFilter Function() apply;
-  final Widget? leading;
-  final bool pickRange;
-}
-
-/// Chip «Importo»: da / a in euro.
-class _AmountPanel extends StatefulWidget {
-  const _AmountPanel({required this.filter});
+/// Tutti i filtri in un pannello: si sceglie con calma, poi «Mostra risultati».
+/// Conti e categorie a scelta multipla.
+class _FiltersSheet extends StatefulWidget {
+  const _FiltersSheet({required this.filter, required this.lists});
   final TxFilter filter;
+  final _Lists lists;
 
   @override
-  State<_AmountPanel> createState() => _AmountPanelState();
+  State<_FiltersSheet> createState() => _FiltersSheetState();
 }
 
-class _AmountPanelState extends State<_AmountPanel> {
+class _FiltersSheetState extends State<_FiltersSheet> {
+  late TxFilter _f = widget.filter;
   late final _min = TextEditingController(text: widget.filter.min ?? '');
   late final _max = TextEditingController(text: widget.filter.max ?? '');
 
@@ -381,37 +321,157 @@ class _AmountPanelState extends State<_AmountPanel> {
     super.dispose();
   }
 
+  void _set(TxFilter f) => setState(() => _f = f);
+
+  Set<T> _toggle<T>(Set<T> set, T value) => set.contains(value) ? ({...set}..remove(value)) : {...set, value};
+
+  Future<void> _pickRange() async {
+    final from = parseIsoDay(_f.from), to = parseIsoDay(_f.to);
+    final range = await showDateRangePicker(
+      context: context,
+      firstDate: DateTime.utc(2000),
+      lastDate: today(),
+      initialDateRange: from != null && to != null && !to.isBefore(from) ? DateTimeRange(start: from, end: to) : null,
+      helpText: 'Dal / al',
+    );
+    if (range == null || !mounted) return;
+    _set(_f.copyWith(period: null, from: iso(range.start), to: iso(range.end)));
+  }
+
+  TxFilter _result() {
+    String? value(TextEditingController c) => c.text.trim().isEmpty ? null : c.text.trim();
+    return _f.copyWith(min: value(_min), max: value(_max));
+  }
+
   @override
   Widget build(BuildContext context) {
+    final f = _f;
+    final custom = (f.from ?? '').isNotEmpty || (f.to ?? '').isNotEmpty;
     const keyboard = TextInputType.numberWithOptions(decimal: true);
-    String? value(TextEditingController c) => c.text.trim().isEmpty ? null : c.text.trim();
+    Widget title(String text) => Padding(
+          padding: const EdgeInsets.only(top: 18, bottom: 8),
+          child: Text(text, style: const TextStyle(color: AppColors.muted, fontSize: 13, fontWeight: FontWeight.w600)),
+        );
+    Widget pill(String label, bool selected, VoidCallback onTap, {Key? key, Widget? avatar}) => FilterChip(
+          key: key,
+          label: Text(label),
+          avatar: avatar,
+          selected: selected,
+          showCheckmark: false,
+          visualDensity: VisualDensity.compact,
+          backgroundColor: AppColors.surface2,
+          selectedColor: AppColors.accent,
+          side: BorderSide.none,
+          shape: const StadiumBorder(),
+          onSelected: (_) => onTap(),
+        );
+    Widget pills(List<Widget> children) => Wrap(spacing: 6, runSpacing: 6, children: children);
+
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 4, 20, 8),
-      child: Column(mainAxisSize: MainAxisSize.min, children: [
-        Row(children: [
-          Expanded(
-            child: TextField(
-                key: const Key('amount-min'),
-                controller: _min,
-                keyboardType: keyboard,
-                decoration: const InputDecoration(hintText: 'Da (€)')),
+      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+      child: ConstrainedBox(
+        constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * .85),
+        child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 20),
+            child: Text('Filtri', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700)),
           ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: TextField(
-                key: const Key('amount-max'),
-                controller: _max,
-                keyboardType: keyboard,
-                decoration: const InputDecoration(hintText: 'A (€)')),
+          Flexible(
+            child: ListView(
+              shrinkWrap: true,
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              children: [
+                title('Periodo'),
+                pills([
+                  for (final MapEntry(key: key, value: (label, _)) in periodShortcuts.entries)
+                    pill(label, f.period == key && !custom,
+                        () => _set(f.copyWith(period: f.period == key && !custom ? null : key, from: null, to: null))),
+                  pill(custom ? chipLabels(f, const [], const [])['period']! : 'Dal / al…', custom, _pickRange,
+                      key: const Key('pick-range')),
+                ]),
+                title('Tipo'),
+                SegmentedButton<String>(
+                  key: const Key('direction'),
+                  showSelectedIcon: false,
+                  segments: const [
+                    ButtonSegment(value: 'all', label: Text('Tutti')),
+                    ButtonSegment(value: 'out', label: Text('Uscite')),
+                    ButtonSegment(value: 'in', label: Text('Entrate')),
+                  ],
+                  selected: {f.direction ?? 'all'},
+                  onSelectionChanged: (v) => _set(f.copyWith(direction: v.first == 'all' ? null : v.first)),
+                ),
+                title('Conti'),
+                pills([
+                  for (final a in widget.lists.accounts)
+                    pill('${a['bank']} · ${a['label']}${a['hidden'] == 1 ? ' (nascosto)' : ''}',
+                        f.accounts.contains(a['id']), () => _set(f.copyWith(accounts: _toggle(f.accounts, a['id'] as int))),
+                        key: Key('acc-${a['id']}')),
+                ]),
+                title('Categorie'),
+                pills([
+                  pill('Senza categoria', f.categories.contains('none'),
+                      () => _set(f.copyWith(categories: _toggle(f.categories, 'none'))),
+                      key: const Key('cat-none')),
+                  for (final c in widget.lists.categories)
+                    pill(c['name'] as String, f.categories.contains('${c['id']}'),
+                        () => _set(f.copyWith(categories: _toggle(f.categories, '${c['id']}'))),
+                        key: Key('cat-${c['id']}'),
+                        avatar: CategoryAvatar(icon: c['icon'] as String?, color: c['color'] as String?, size: 20)),
+                ]),
+                title('Importo'),
+                Row(children: [
+                  Expanded(
+                    child: TextField(
+                        key: const Key('amount-min'),
+                        controller: _min,
+                        keyboardType: keyboard,
+                        decoration: const InputDecoration(hintText: 'Da (€)', isDense: true)),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: TextField(
+                        key: const Key('amount-max'),
+                        controller: _max,
+                        keyboardType: keyboard,
+                        decoration: const InputDecoration(hintText: 'A (€)', isDense: true)),
+                  ),
+                ]),
+                const SizedBox(height: 8),
+                SwitchListTile(
+                  key: const Key('show-hidden'),
+                  contentPadding: EdgeInsets.zero,
+                  title: const Text('Mostra conti nascosti'),
+                  value: f.hidden,
+                  onChanged: (v) => _set(f.copyWith(hidden: v)),
+                ),
+              ],
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
+            child: Row(children: [
+              TextButton(
+                key: const Key('reset-filters'),
+                onPressed: () {
+                  _min.clear();
+                  _max.clear();
+                  _set(f.cleared());
+                },
+                child: const Text('Azzera'),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: FilledButton(
+                  key: const Key('apply-filters'),
+                  onPressed: () => Navigator.pop(context, _result()),
+                  child: const Text('Mostra risultati'),
+                ),
+              ),
+            ]),
           ),
         ]),
-        const SizedBox(height: 12),
-        FilledButton(
-          key: const Key('amount-apply'),
-          onPressed: () => Navigator.pop(context, widget.filter.copyWith(min: value(_min), max: value(_max))),
-          child: const Text('Applica'),
-        ),
-      ]),
+      ),
     );
   }
 }

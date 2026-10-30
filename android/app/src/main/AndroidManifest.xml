@@ -58,6 +58,11 @@
                 <data android:scheme="https" android:host="francescozanella.github.io" android:pathPrefix="/Bankrelay/app"/>
             </intent-filter>
         </activity>
+        <!-- Pulsanti delle categorie nelle notifiche: non esportato, solo le
+             notifiche di questa app possono attivarlo. -->
+        <receiver
+            android:exported="false"
+            android:name="com.dexterous.flutterlocalnotifications.ActionBroadcastReceiver" />
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->
         <meta-data

@@ -1,5 +1,6 @@
-/// Sincronizzazione in background ad app chiusa (l'equivalente dell'attività
-/// pianificata di Windows della versione web) e notifiche dei consensi.
+/// Sincronizzazione in background alle 7, alle 14 e alle 23 (l'equivalente
+/// dell'attività pianificata di Windows della versione web), notifiche dei
+/// consensi e dei movimenti da categorizzare, con i pulsanti delle categorie.
 library;
 
 import 'package:flutter/widgets.dart';
@@ -15,25 +16,39 @@ import '../data/secure_database.dart';
 import '../data/secure_store.dart';
 import '../domain/reports.dart';
 import '../domain/to_categorize.dart';
+import '../domain/transactions.dart';
+import 'schedule.dart';
 import 'sync.dart';
 
-const _taskName = 'banking-sync';
+/// Vecchio lavoro periodico «ogni ~12 ore»: si cancella all'avvio.
+const _oldPeriodicTask = 'banking-sync';
+const _taskName = 'banking-sync-slot';
 const _channelId = 'consensi';
 const _movementsChannel = 'movimenti';
 const _movementsGroup = 'movimenti-da-categorizzare';
 const _payloadPrefix = 'tx:';
+const _actionPrefix = 'cat:';
 final _notifications = FlutterLocalNotificationsPlugin();
 
-/// Registra il lavoro periodico: Android lo esegue circa ogni 12 ore, quando
-/// c'è rete. I conti aggiornati da meno di 12 ore vengono comunque saltati.
+/// Programma la prossima sincronizzazione (7, 14 o 23 ora italiana). WorkManager
+/// non garantisce il minuto: con il telefono in risparmio energetico può partire
+/// un po' dopo. Parte solo con la rete.
 Future<void> scheduleBackgroundSync() async {
   await Workmanager().initialize(callbackDispatcher);
-  await Workmanager().registerPeriodicTask(
+  await Workmanager().cancelByUniqueName(_oldPeriodicTask);
+  await _scheduleNext(ExistingWorkPolicy.keep);
+}
+
+/// [policy]: all'avvio dell'app `keep` (se è già in coda resta quella);
+/// dentro il lavoro `update`, cioè in coda dopo quello che sta girando.
+Future<void> _scheduleNext(ExistingWorkPolicy policy) {
+  final now = DateTime.now().toUtc();
+  return Workmanager().registerOneOffTask(
     _taskName,
     _taskName,
-    frequency: const Duration(hours: 12),
+    initialDelay: nextSyncSlot(now).difference(now),
     constraints: Constraints(networkType: NetworkType.connected),
-    existingWorkPolicy: ExistingPeriodicWorkPolicy.keep,
+    existingWorkPolicy: policy,
   );
 }
 
@@ -43,8 +58,10 @@ Future<void> initNotifications({bool requestPermission = false, void Function(St
     settings: const InitializationSettings(android: AndroidInitializationSettings('@drawable/ic_notification')),
     onDidReceiveNotificationResponse: (response) {
       final txId = _txIdFrom(response.payload);
-      if (txId != null) onOpenTransaction?.call(txId);
+      // I pulsanti delle categorie arrivano a [onNotificationAction].
+      if (txId != null && response.actionId == null) onOpenTransaction?.call(txId);
     },
+    onDidReceiveBackgroundNotificationResponse: onNotificationAction,
   );
   if (requestPermission) {
     await _notifications
@@ -55,6 +72,26 @@ Future<void> initNotifications({bool requestPermission = false, void Function(St
 
 String? _txIdFrom(String? payload) =>
     payload != null && payload.startsWith(_payloadPrefix) ? payload.substring(_payloadPrefix.length) : null;
+
+/// Id della categoria del pulsante toccato, se è uno dei nostri.
+int? categoryFromAction(String? actionId) =>
+    actionId != null && actionId.startsWith(_actionPrefix) ? int.tryParse(actionId.substring(_actionPrefix.length)) : null;
+
+/// Pulsante di una categoria nella notifica: la assegna al movimento senza aprire
+/// l'app (solo a quello, senza creare regole). Android lo esegue in un motore
+/// Flutter a parte; la notifica è già stata tolta.
+@pragma('vm:entry-point')
+Future<void> onNotificationAction(NotificationResponse response) async {
+  final txId = _txIdFrom(response.payload), categoryId = categoryFromAction(response.actionId);
+  if (txId == null || categoryId == null) return;
+  WidgetsFlutterBinding.ensureInitialized();
+  final db = await openSecureDatabase(KeystoreSecretStore(), background: true);
+  try {
+    await setCategory(db, txId, categoryId);
+  } finally {
+    await db.close();
+  }
+}
 
 /// Movimento della notifica che ha avviato l'app (app chiusa), se c'è.
 Future<String?> launchTransaction() async {
@@ -77,12 +114,19 @@ int movementNotificationId(String txId) {
 Future<void> notifyToCategorize(DatabaseExecutor db) async {
   final rows = await toNotify(db);
   if (rows.isEmpty) return;
-  const details = NotificationDetails(
-    android: AndroidNotificationDetails(_movementsChannel, 'Movimenti da categorizzare',
-        channelDescription: 'Movimenti nuovi che le regole non hanno saputo classificare',
-        visibility: NotificationVisibility.private,
-        groupKey: _movementsGroup),
-  );
+  final quick = {
+    for (final income in [false, true]) income: await quickCategories(db, income: income),
+  };
+  // Pulsanti nascosti sulla schermata di blocco insieme al contenuto (private).
+  NotificationDetails details(bool income) => NotificationDetails(
+        android: AndroidNotificationDetails(_movementsChannel, 'Movimenti da categorizzare',
+            channelDescription: 'Movimenti nuovi che le regole non hanno saputo classificare',
+            visibility: NotificationVisibility.private,
+            groupKey: _movementsGroup,
+            actions: [
+              for (final c in quick[income]!) AndroidNotificationAction('$_actionPrefix${c['id']}', c['name'] as String),
+            ]),
+      );
   for (final t in rows) {
     final party = [t['counterparty'], t['description']]
         .whereType<String>()
@@ -91,9 +135,9 @@ Future<void> notifyToCategorize(DatabaseExecutor db) async {
     await _notifications.show(
       id: movementNotificationId(t['id'] as String),
       title: '$party · ${cents > 0 ? '+' : ''}${money(cents, t['currency'] as String?)}',
-      body: '${t['bank_label']}${t['status'] == 'PDNG' ? ' · in attesa' : ''} · tocca per scegliere la categoria',
+      body: '${t['bank_label']}${t['status'] == 'PDNG' ? ' · in attesa' : ''} · tocca per le altre categorie',
       payload: '$_payloadPrefix${t['id']}',
-      notificationDetails: details,
+      notificationDetails: details(cents > 0),
     );
   }
   if (rows.length > 1) {
@@ -101,7 +145,7 @@ Future<void> notifyToCategorize(DatabaseExecutor db) async {
     await _notifications.show(
       id: 2,
       title: '${rows.length} movimenti da categorizzare',
-      body: 'Tocca un movimento per scegliere la categoria',
+      body: 'Scegli la categoria dai pulsanti o tocca un movimento',
       notificationDetails: const NotificationDetails(
         android: AndroidNotificationDetails(_movementsChannel, 'Movimenti da categorizzare',
             visibility: NotificationVisibility.private, groupKey: _movementsGroup, setAsGroupSummary: true),
@@ -139,16 +183,23 @@ Future<void> notifyConsents(List<ConsentAlert> alerts) async {
 void callbackDispatcher() {
   Workmanager().executeTask((task, input) async {
     WidgetsFlutterBinding.ensureInitialized();
-    final secrets = KeystoreSecretStore();
-    final db = await openSecureDatabase(secrets);
     try {
-      await syncAll(db, EnableBankingClient(() => readCredentials(secrets)), onlyDue: true);
-      await initNotifications();
-      await notifyToCategorize(db);
-      await notifyConsents(await consentAlerts(db));
+      final secrets = KeystoreSecretStore();
+      final db = await openSecureDatabase(secrets, background: true);
+      try {
+        await syncAll(db, EnableBankingClient(() => readCredentials(secrets)), onlyDue: true);
+        await initNotifications();
+        await notifyToCategorize(db);
+        await notifyConsents(await consentAlerts(db));
+      } finally {
+        await db.close();
+      }
+    } catch (_) {
+      // Un errore qui non deve fermare la catena: il prossimo orario va comunque programmato.
     } finally {
-      await db.close();
+      if (task == _taskName) await _scheduleNext(ExistingWorkPolicy.update);
     }
+    // Sempre «riuscito»: un fallimento annullerebbe anche il lavoro messo in coda dopo.
     return true;
   });
 }

@@ -18,7 +18,8 @@ lib/
   bank/                enable_banking (JWT RS256, API), consent (stato monouso), bank_service
                        (collega, rinnova, scollega, elimina, ritorno dalla banca, SyncRunner)
   sync/                sync (normalizza, deduplica, PDNG, storico/incrementale, is_due),
-                       background (WorkManager ogni ~12 h, notifiche di scadenza)
+                       schedule (orari 7/14/23 ora italiana), background (WorkManager,
+                       notifiche di scadenza e dei movimenti con i pulsanti delle categorie)
   domain/              categorize, reports, analysis, cashflow, transactions, categories,
                        to_categorize (movimenti da notificare), budget (solo logica: pagina tolta)
   security/            app_lock (sblocco biometrico, 30 minuti di inattività)
@@ -72,7 +73,12 @@ Le schermate leggono il DB direttamente tramite le funzioni di `domain/` e si ri
   che li sostituisce: stesso id, oppure stesso importo e stessa controparte entro 7 giorni.
 
 **Sincronizzazione**
-- All'apertura (dopo lo sblocco) e da WorkManager ogni ~12 ore, solo per i conti "scaduti".
+- Solo da WorkManager alle 7, 14 e 23 ora italiana: un lavoro singolo che a fine esecuzione mette in
+  coda il successivo (`ExistingWorkPolicy.update`). Niente sync all'apertura né a mano; restano solo
+  quelle dello storico dopo un collegamento o un rinnovo. Minimo 4 ore tra due sync dello stesso conto.
+- I lavori in background (sync e pulsanti delle notifiche) aprono il database con una connessione
+  propria: il plugin altrimenti riuserebbe quella dell'app aperta, e chiuderla la chiuderebbe anche
+  all'app. `busy_timeout` di 10 s su tutte le connessioni.
 - Saldi e movimenti vengono normalizzati in centesimi interi, deduplicati con una chiave stabile; i
   movimenti in attesa (PDNG) vengono sostituiti da quelli contabilizzati.
 - Dopo ogni sincronizzazione: riconoscimento dei giroconti (solo IBAN dei tuoi conti o tuo nome) e

@@ -96,7 +96,7 @@ void main() {
     await markInvestments();
     final all = await loadTransactions(db, const TxFilter());
     expect((all.count, all.spent, all.received), (4, 30000, 200000)); // elencati tutti e 4
-    final theta = await loadTransactions(db, TxFilter(account: acc));
+    final theta = await loadTransactions(db, TxFilter(accounts: {acc}));
     expect((theta.count, theta.spent, theta.received), (4, 30000, 200000));
     final days = {for (final (day, _, total) in theta.days) day: total};
     expect(days['2026-10-03'], 0); // il giorno con il solo acquisto di ETF non ha uscite

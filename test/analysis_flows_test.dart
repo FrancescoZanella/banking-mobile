@@ -93,7 +93,8 @@ void main() {
     await tester.tap(find.byKey(Key('category-${category ?? 'none'}')));
     await settle(tester);
     expect(find.byType(TransactionsScreen), findsOneWidget);
-    expect(find.text('3'), findsOneWidget); // tre movimenti della categoria nell'anno
+    // Tre movimenti della categoria nell'anno (il «3» del riquadro, non quello sul pulsante Filtri).
+    expect(find.descendant(of: find.byType(Card), matching: find.text('3')), findsOneWidget);
   });
 
   testWidgets('Flussi: settimana, mese e anno, totali, categorie, entrate ricorrenti', (tester) async {
@@ -121,6 +122,11 @@ void main() {
     expect(find.descendant(of: expense, matching: find.byKey(const Key('flow-out-none'))), findsOneWidget);
     expect(find.descendant(of: expense, matching: find.text('250,00 €')), findsWidgets);
     expect(find.descendant(of: income, matching: find.text('1.000,00 €')), findsWidgets);
+
+    // Saldo per categoria: entrate e uscite sono entrambe senza categoria, 1.000 − 250.
+    final net = find.byKey(const Key('net-by-category'));
+    expect(find.descendant(of: net, matching: find.byKey(const Key('net-none'))), findsOneWidget);
+    expect(find.descendant(of: net, matching: find.text('+750,00 €')), findsOneWidget);
 
     // Tocco su una categoria → i suoi movimenti del periodo.
     await tester.tap(find.byKey(const Key('flow-out-none')));
