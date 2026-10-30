@@ -8,6 +8,7 @@ import '../app/services.dart';
 import '../core/dates.dart';
 import '../core/money.dart';
 import '../domain/transactions.dart';
+import 'polish.dart';
 import 'theme.dart';
 import 'widgets.dart';
 
@@ -148,7 +149,9 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
               child: Center(child: Text('Impossibile caricare i movimenti.')),
             )
           else if (data == null)
-            const SliverFillRemaining(hasScrollBody: false, child: Center(child: CircularProgressIndicator()))
+            const SliverPadding(
+                padding: EdgeInsets.symmetric(horizontal: 16),
+                sliver: SliverToBoxAdapter(child: SkeletonPage(embedded: true, hero: false)))
           else ..._list(data.$1),
         ]);
       },
@@ -225,7 +228,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
   }
 
   Widget _tiles(TxPage page) {
-    Widget tile(String label, String value, {Color? color}) => Expanded(
+    Widget tile(String label, String value, {Color? color, bool amount = true}) => Expanded(
           child: Card(
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
@@ -233,7 +236,9 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                 Text(label, style: const TextStyle(color: AppColors.muted, fontSize: 12)),
                 const SizedBox(height: 2),
                 FittedBox(
-                  child: Text(value, style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16, color: color)),
+                  child: amount
+                      ? Amount(value, style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16, color: color))
+                      : Text(value, style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16, color: color)),
                 ),
               ]),
             ),
@@ -244,19 +249,26 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
       const SizedBox(width: 8),
       tile('Entrate', money(page.received), color: AppColors.pos),
       const SizedBox(width: 8),
-      tile('Movimenti', '${page.count}'),
+      tile('Movimenti', '${page.count}', amount: false),
     ]);
   }
 
   List<Widget> _list(TxPage page) => [
         if (page.days.isEmpty)
-          const SliverPadding(
-            padding: EdgeInsets.all(16),
+          SliverPadding(
+            padding: const EdgeInsets.all(16),
             sliver: SliverToBoxAdapter(
               child: Card(
-                child: Padding(
-                  padding: EdgeInsets.all(16),
-                  child: Text('Nessun movimento con questi filtri.', style: TextStyle(color: AppColors.muted)),
+                child: Center(
+                  child: _filter.isEmpty
+                      ? const EmptyState(icon: Icons.receipt_long_outlined, title: 'Nessun movimento')
+                      : EmptyState(
+                          icon: Icons.search_off,
+                          title: 'Nessun movimento con questi filtri',
+                          hint: 'Prova a togliere qualche filtro.',
+                          action: 'Azzera filtri',
+                          onAction: () => _apply(_filter.cleared()),
+                        ),
                 ),
               ),
             ),

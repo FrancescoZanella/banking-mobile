@@ -3,6 +3,7 @@ import 'package:sqflite_common/sqlite_api.dart';
 
 import '../bank/bank_service.dart';
 import '../bank/enable_banking.dart';
+import '../data/database.dart';
 import '../data/secure_store.dart';
 
 /// File .pem scelto dall'utente: nome del file e contenuto.
@@ -40,6 +41,20 @@ class AppServices {
 
   /// Toglie la notifica di un movimento appena categorizzato.
   final Future<void> Function(String txId) dismissNotification;
+
+  /// «Nascondi importi»: sfoca gli importi in tutta l'app. Resta attivo tra
+  /// un'apertura e l'altra (impostazione nel database cifrato).
+  final hideAmounts = ValueNotifier<bool>(false);
+
+  static const _hideAmountsKey = 'hide_amounts';
+
+  Future<void> loadPreferences() async =>
+      hideAmounts.value = await getSetting(db, _hideAmountsKey) == '1';
+
+  Future<void> setHideAmounts(bool hidden) async {
+    hideAmounts.value = hidden;
+    await setSetting(db, _hideAmountsKey, hidden ? '1' : '0');
+  }
 }
 
 Future<void> _noDismiss(String _) async {}

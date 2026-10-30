@@ -29,6 +29,7 @@ Future<void> main() async {
     afterSync: notifyToCategorize,
     dismissNotification: cancelMovementNotification,
   );
+  await services.loadPreferences();
   // Tocco su una notifica «da categorizzare»: si apre il dettaglio del movimento.
   final openTransactions = StreamController<String>();
   await initNotifications(requestPermission: true, onOpenTransaction: openTransactions.add);

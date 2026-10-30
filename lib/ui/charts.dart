@@ -4,6 +4,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 
 import '../core/money.dart';
+import 'polish.dart';
 import 'theme.dart';
 
 /// Grafici di Analisi e Flussi, come quelli Chart.js del web (app.js).
@@ -106,7 +107,9 @@ class CumulativeChart extends StatelessWidget {
   final String previousLabel;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => Sensitive(sigma: 10, child: Builder(builder: _chart));
+
+  Widget _chart(BuildContext context) {
     final n = math.max(current.length, previous.length);
     final top = [...current, ...previous, 0].reduce(math.max).toDouble();
     final step = _step(top);
@@ -168,7 +171,9 @@ class MonthBarsChart extends StatelessWidget {
   final ValueChanged<int>? onTap;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => Sensitive(sigma: 10, child: Builder(builder: _chart));
+
+  Widget _chart(BuildContext context) {
     final top = [...values, 0].reduce(math.max).toDouble();
     final step = _step(top);
     return SizedBox(
@@ -236,7 +241,9 @@ class FlowsChart extends StatelessWidget {
   final ValueChanged<int>? onTap;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => Sensitive(sigma: 10, child: Builder(builder: _chart));
+
+  Widget _chart(BuildContext context) {
     final all = [...income, ...expense, ...net, 0];
     final step = _step(math.max(all.reduce(math.max), -all.reduce(math.min)).toDouble());
     final maxY = (all.reduce(math.max) / step).ceil() * step;
@@ -331,7 +338,9 @@ class NetWorthChart extends StatelessWidget {
   final List<int> values;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => Sensitive(sigma: 10, child: Builder(builder: _chart));
+
+  Widget _chart(BuildContext context) {
     final low = values.reduce(math.min).toDouble(), high = values.reduce(math.max).toDouble();
     final step = _step(math.max(high - low, high.abs() / 10));
     return SizedBox(

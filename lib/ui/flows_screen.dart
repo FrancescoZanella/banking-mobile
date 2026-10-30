@@ -10,6 +10,7 @@ import '../domain/reports.dart';
 import '../domain/transactions.dart';
 import 'analysis_screen.dart' show barsEnd, monthInPeriod, openTransactions, shortMonth;
 import 'charts.dart';
+import 'polish.dart';
 import 'theme.dart';
 import 'widgets.dart';
 
@@ -122,17 +123,17 @@ class _FlowsScreenState extends State<FlowsScreen> {
                 if (snap.hasError)
                   const Text('Impossibile caricare i flussi.')
                 else if (data == null)
-                  const Padding(padding: EdgeInsets.all(32), child: Center(child: CircularProgressIndicator()))
+                  const SkeletonPage(embedded: true, hero: false)
                 else ...[
                   _tiles(data),
                   const SizedBox(height: 16),
                   _net(data.net),
                   const SizedBox(height: 16),
                   _categories('Uscite per categoria', data.byCategory.expense, 'out',
-                      'Nessuna uscita in questo periodo.', const Key('expense-by-category')),
+                      'Nessuna uscita in questo periodo', const Key('expense-by-category')),
                   const SizedBox(height: 16),
                   _categories('Entrate per categoria', data.byCategory.income, 'in',
-                      'Nessuna entrata in questo periodo.', const Key('income-by-category')),
+                      'Nessuna entrata in questo periodo', const Key('income-by-category')),
                   if (data.moved.n > 0) ...[const SizedBox(height: 16), _moved(data.moved)],
                   const SizedBox(height: 16),
                   _flows(data),
@@ -180,17 +181,17 @@ class _FlowsScreenState extends State<FlowsScreen> {
       childAspectRatio: 1.75,
       // Risparmiati e Investiti sempre visibili, anche a zero (richiesta dell'utente).
       children: [
-        tile('Entrate$soFar', Text(money(t.income), style: big.copyWith(color: AppColors.pos))),
-        tile('Uscite$soFar', Text(money(t.expense), style: big), 'senza investimenti'),
+        tile('Entrate$soFar', Amount(money(t.income), style: big.copyWith(color: AppColors.pos))),
+        tile('Uscite$soFar', Amount(money(t.expense), style: big), 'senza investimenti'),
         tile(
           'Risparmiati',
-          Text(signedMoney(t.net),
+          Amount(signedMoney(t.net),
               key: const Key('saved'),
               style: big.copyWith(color: t.net > 0 ? AppColors.pos : (t.net < 0 ? AppColors.neg : null))),
         ),
         tile(
           'Investiti',
-          Text(money(d.invested), key: const Key('invested'), style: big.copyWith(color: AppColors.accent)),
+          Amount(money(d.invested), key: const Key('invested'), style: big.copyWith(color: AppColors.accent)),
         ),
         tile('Tasso di risparmio', rateText,
             average == null ? null : 'media 12 mesi ${average >= 0 ? '${average.round()}%' : 'negativa'}'),
@@ -212,9 +213,8 @@ class _FlowsScreenState extends State<FlowsScreen> {
               style: TextStyle(color: AppColors.muted, fontSize: 13)),
           const SizedBox(height: 8),
           if (rows.isEmpty)
-            const Padding(
-              padding: EdgeInsets.only(bottom: 8),
-              child: Text('Nessun movimento in questo periodo.', style: TextStyle(color: AppColors.muted)),
+            const Center(
+              child: EmptyState(icon: Icons.balance_outlined, title: 'Nessun movimento in questo periodo'),
             ),
           for (final c in rows)
             InkWell(
@@ -231,7 +231,7 @@ class _FlowsScreenState extends State<FlowsScreen> {
                     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                       Row(children: [
                         Expanded(child: Text(c.name, overflow: TextOverflow.ellipsis)),
-                        Text(signedMoney(c.net),
+                        Amount(signedMoney(c.net),
                             style: TextStyle(
                                 fontWeight: FontWeight.w600, color: c.net < 0 ? AppColors.neg : AppColors.pos)),
                       ]),
@@ -258,14 +258,14 @@ class _FlowsScreenState extends State<FlowsScreen> {
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Row(children: [
             Expanded(child: Text(title, style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w600))),
-            Text(money(total),
+            Amount(money(total),
                 style: TextStyle(fontWeight: FontWeight.w600, color: direction == 'in' ? AppColors.pos : null)),
           ]),
           const SizedBox(height: 8),
           if (rows.isEmpty)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: Text(empty, style: const TextStyle(color: AppColors.muted)),
+            Center(
+              child: EmptyState(
+                  icon: direction == 'in' ? Icons.south_west : Icons.savings_outlined, title: empty),
             ),
           for (final c in rows)
             InkWell(
@@ -291,7 +291,7 @@ class _FlowsScreenState extends State<FlowsScreen> {
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
-                        Text(money(c.total), style: const TextStyle(fontWeight: FontWeight.w600)),
+                        Amount(money(c.total), style: const TextStyle(fontWeight: FontWeight.w600)),
                       ]),
                       const SizedBox(height: 6),
                       ClipRRect(
@@ -324,7 +324,7 @@ class _FlowsScreenState extends State<FlowsScreen> {
           title: const Text('Spostato tra i tuoi conti'),
           subtitle: Text('${moved.n} ${moved.n == 1 ? 'giroconto' : 'giroconti'} · fuori da entrate e uscite',
               style: const TextStyle(color: AppColors.muted, fontSize: 12)),
-          trailing: Text(money(moved.cents), style: const TextStyle(fontWeight: FontWeight.w600)),
+          trailing: Amount(money(moved.cents), style: const TextStyle(fontWeight: FontWeight.w600)),
         ),
       );
 
@@ -356,14 +356,19 @@ class _FlowsScreenState extends State<FlowsScreen> {
         padding: const EdgeInsets.all(16),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           const Text('Andamento del patrimonio', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600)),
-          Text(
+          Amount(
             'Saldo totale in euro a fine mese, ricostruito dai movimenti'
             '${delta != null ? ' · ${signedMoney(delta)} da ${shortMonth(d.trend.months.first)}' : ''}',
             style: const TextStyle(color: AppColors.muted, fontSize: 13),
           ),
           const SizedBox(height: 12),
           if (values.isEmpty)
-            const Text('Nessun saldo in euro disponibile.', style: TextStyle(color: AppColors.muted))
+            const Center(
+              child: EmptyState(
+                  icon: Icons.show_chart,
+                  title: 'Nessun saldo in euro disponibile',
+                  hint: 'Il grafico compare dopo la prima sincronizzazione.'),
+            )
           else
             NetWorthChart(labels: [for (final m in d.trend.months) shortMonth(m)], values: values),
         ]),
@@ -380,9 +385,8 @@ class _FlowsScreenState extends State<FlowsScreen> {
               child: Text('Da dove arrivano le entrate', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600)),
             ),
             if (d.sources.isEmpty)
-              const Padding(
-                padding: EdgeInsets.all(12),
-                child: Text('Nessuna entrata in questo periodo.', style: TextStyle(color: AppColors.muted)),
+              const Center(
+                child: EmptyState(icon: Icons.south_west, title: 'Nessuna entrata in questo periodo'),
               ),
             for (final s in d.sources)
               ListTile(
@@ -395,7 +399,7 @@ class _FlowsScreenState extends State<FlowsScreen> {
                       : '${s.n} ${s.n == 1 ? 'movimento' : 'movimenti'}',
                   style: const TextStyle(color: AppColors.muted, fontSize: 12),
                 ),
-                trailing: Text(money(s.total), style: const TextStyle(color: AppColors.pos, fontWeight: FontWeight.w600)),
+                trailing: Amount(money(s.total), style: const TextStyle(color: AppColors.pos, fontWeight: FontWeight.w600)),
                 onTap: () async {
                   final key = s.lastKey;
                   if (await showTransactionDetail(context, key.substring(key.indexOf('|') + 1))) _reload();

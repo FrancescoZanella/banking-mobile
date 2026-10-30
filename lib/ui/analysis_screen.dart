@@ -9,6 +9,7 @@ import '../domain/analysis.dart' as analysis;
 import '../domain/reports.dart';
 import '../domain/transactions.dart';
 import 'charts.dart';
+import 'polish.dart';
 import 'theme.dart';
 import 'transactions_screen.dart';
 import 'widgets.dart';
@@ -147,7 +148,7 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
               if (snap.hasError)
                 const Text('Impossibile caricare l\'analisi.')
               else if (data == null)
-                const Padding(padding: EdgeInsets.all(32), child: Center(child: CircularProgressIndicator()))
+                const SkeletonPage(embedded: true, hero: false)
               else ...[
                 _summary(data),
                 const SizedBox(height: 16),
@@ -181,7 +182,7 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
         padding: const EdgeInsets.all(16),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Text('Speso ${current ? 'finora ' : ''}$what', style: const TextStyle(color: AppColors.muted)),
-          Text(money(d.spent),
+          Amount(money(d.spent),
               key: const Key('analysis-spent'),
               style: const TextStyle(fontSize: 32, fontWeight: FontWeight.w700, letterSpacing: -1)),
           const SizedBox(height: 4),
@@ -196,7 +197,7 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
                   size: 16, color: delta < 0 ? AppColors.pos : AppColors.neg),
               const SizedBox(width: 4),
               Expanded(
-                child: Text(
+                child: Amount(
                   '${money(delta.abs())} ${delta < 0 ? 'in meno' : 'in più'} rispetto ${prev.versus}$sameDay',
                   style: TextStyle(color: delta < 0 ? AppColors.pos : AppColors.neg),
                 ),
@@ -223,7 +224,7 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
         padding: const EdgeInsets.all(16),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           const Text('Spesa per mese', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600)),
-          Text('Media ${money(average.round())} al mese · tocca una barra per aprire il mese',
+          Amount('Media ${money(average.round())} al mese · tocca una barra per aprire il mese',
               style: const TextStyle(color: AppColors.muted, fontSize: 13)),
           const SizedBox(height: 14),
           MonthBarsChart(
@@ -248,9 +249,9 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
           const Text('Categorie', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600)),
           const SizedBox(height: 8),
           if (d.categories.isEmpty)
-            const Padding(
-              padding: EdgeInsets.only(bottom: 8),
-              child: Text('Nessuna spesa in questo periodo.', style: TextStyle(color: AppColors.muted)),
+            const Center(
+              child: EmptyState(
+                  icon: Icons.savings_outlined, title: 'Nessuna spesa in questo periodo', hint: 'Il portafoglio ringrazia.'),
             ),
           for (final c in d.categories)
             InkWell(
@@ -276,7 +277,7 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
-                        Text(money(c.total), style: const TextStyle(fontWeight: FontWeight.w600)),
+                        Amount(money(c.total), style: const TextStyle(fontWeight: FontWeight.w600)),
                       ]),
                       const SizedBox(height: 6),
                       ClipRRect(
@@ -295,7 +296,7 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
                               style: const TextStyle(color: AppColors.muted, fontSize: 12)),
                         ),
                         if (compare)
-                        Text(
+                        Amount(
                           c.delta == 0
                               ? 'uguale vs ${prev.short}'
                               : '${c.delta > 0 ? '+' : '−'}${money(c.delta.abs())} vs ${prev.short}',
@@ -322,17 +323,17 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
             const Text('Dove spendi di più', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600)),
             const SizedBox(height: 4),
             if (d.merchants.isEmpty)
-              const Padding(
-                padding: EdgeInsets.symmetric(vertical: 8),
-                child: Text('Nessun esercente in questo periodo.', style: TextStyle(color: AppColors.muted)),
+              const Center(
+                child: EmptyState(icon: Icons.storefront_outlined, title: 'Nessun esercente in questo periodo'),
               ),
             for (final m in d.merchants)
               ListTile(
                 contentPadding: EdgeInsets.zero,
+                leading: MerchantAvatar(name: m['name'] as String, size: 36),
                 title: Text.rich(TextSpan(text: m['name'] as String, children: [
                   TextSpan(text: '  ×${m['n']}', style: const TextStyle(color: AppColors.muted)),
                 ])),
-                trailing: Text(money(m['total'] as int), style: const TextStyle(fontWeight: FontWeight.w600)),
+                trailing: Amount(money(m['total'] as int), style: const TextStyle(fontWeight: FontWeight.w600)),
                 // last_key = "data|id": il pannello si apre sull'ultimo movimento.
                 onTap: () async {
                   final key = m['last_key'] as String;

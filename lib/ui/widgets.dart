@@ -6,6 +6,7 @@ import '../core/money.dart';
 import '../core/periods.dart';
 import '../domain/reports.dart';
 import '../domain/transactions.dart';
+import 'polish.dart';
 import 'theme.dart';
 
 /// Nomi delle icone salvati nel DB (quelli di Tabler, come sul web) → Material.
@@ -78,6 +79,27 @@ class CategoryAvatar extends StatelessWidget {
   }
 }
 
+/// Avatar di un movimento: iniziali dell'esercente con il badge della categoria.
+/// Senza esercente né descrizione resta l'icona della categoria.
+class TxAvatar extends StatelessWidget {
+  const TxAvatar({super.key, required this.tx, this.size = 40});
+  final Map<String, Object?> tx;
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    final title = txTitle(tx);
+    final icon = tx['category_icon'] as String?, color = tx['category_color'] as String?;
+    if (title == 'Movimento') return CategoryAvatar(icon: icon, color: color, size: size);
+    return MerchantAvatar(
+      name: title,
+      categoryIcon: categoryIcon(icon),
+      categoryColor: hexColor(color ?? '#adb5bd'),
+      size: size,
+    );
+  }
+}
+
 String txTitle(Map<String, Object?> t) {
   for (final key in ['counterparty', 'description']) {
     final v = t[key] as String?;
@@ -103,7 +125,7 @@ class DayHeader extends StatelessWidget {
                 style: const TextStyle(color: AppColors.muted, fontWeight: FontWeight.w600, fontSize: 13)),
           ),
           if (total != null)
-            Text(signedMoney(total!), style: const TextStyle(color: AppColors.muted, fontSize: 13)),
+            Amount(signedMoney(total!), style: const TextStyle(color: AppColors.muted, fontSize: 13)),
         ]),
       );
 }
@@ -132,11 +154,11 @@ class FeedItem extends StatelessWidget {
       child: ListTile(
         key: ValueKey('tx-${t['id']}'),
         contentPadding: const EdgeInsets.symmetric(horizontal: 12),
-        leading: CategoryAvatar(icon: t['category_icon'] as String?, color: t['category_color'] as String?),
+        leading: TxAvatar(tx: t),
         title: Text(txTitle(t), maxLines: 1, overflow: TextOverflow.ellipsis),
         subtitle: Text(sub,
             maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: AppColors.muted, fontSize: 12)),
-        trailing: Text(
+        trailing: Amount(
           signedMoney(cents, t['currency'] as String?),
           style: TextStyle(fontWeight: FontWeight.w600, color: cents > 0 ? AppColors.pos : AppColors.text),
         ),
@@ -243,11 +265,11 @@ class _TransactionDetailState extends State<_TransactionDetail> {
     final day = t['booking_date'] as String?;
     final label = dayLabel(day);
     return Column(children: [
-      CategoryAvatar(icon: t['category_icon'] as String?, color: t['category_color'] as String?, size: 56),
+      TxAvatar(tx: t, size: 56),
       const SizedBox(height: 10),
       Text(txTitle(t), textAlign: TextAlign.center, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
       const SizedBox(height: 4),
-      Text(signedMoney(cents, t['currency'] as String?),
+      Amount(signedMoney(cents, t['currency'] as String?),
           key: const Key('detail-amount'),
           style: TextStyle(
               fontSize: 30, fontWeight: FontWeight.w700, color: cents > 0 ? AppColors.pos : AppColors.text)),
@@ -337,16 +359,18 @@ class _TransactionDetailState extends State<_TransactionDetail> {
 
   Widget _history(Map<String, Object?> t, TransactionHistory h) {
     final currency = t['currency'] as String?;
-    Widget stat(String label, String value) => Expanded(
+    Widget stat(String label, String value, {bool amount = false}) => Expanded(
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Text(label, style: const TextStyle(color: AppColors.muted, fontSize: 12)),
-            Text(value, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+            amount
+                ? Amount(value, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600))
+                : Text(value, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
           ]),
         );
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       Text('Con ${t['counterparty']}', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
       const SizedBox(height: 8),
-      Row(children: [stat('Movimenti', '${h.count}'), stat('Totale', money(h.total, currency))]),
+      Row(children: [stat('Movimenti', '${h.count}'), stat('Totale', money(h.total, currency), amount: true)]),
       if (h.first != null)
         Padding(
           padding: const EdgeInsets.only(top: 6),
@@ -359,7 +383,7 @@ class _TransactionDetailState extends State<_TransactionDetail> {
           title: Text(dayLabel(r['booking_date'] as String?)),
           subtitle: Text(r['category_name'] as String? ?? 'Senza categoria',
               style: const TextStyle(color: AppColors.muted, fontSize: 12)),
-          trailing: Text(signedMoney(r['amount_cents'] as int, r['currency'] as String?)),
+          trailing: Amount(signedMoney(r['amount_cents'] as int, r['currency'] as String?)),
         ),
     ]);
   }

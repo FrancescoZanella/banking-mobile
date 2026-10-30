@@ -5,6 +5,7 @@ import '../bank/bank_service.dart';
 import '../core/dates.dart';
 import '../core/money.dart';
 import '../domain/reports.dart';
+import 'polish.dart';
 import 'theme.dart';
 
 /// Pagina Conti: patrimonio, collegamento banche, schede banca con stato del
@@ -243,12 +244,12 @@ class _AccountsScreenState extends State<AccountsScreen> {
                     child: Column(children: [
                       const Text('Patrimonio nei conti visibili', style: TextStyle(color: AppColors.muted)),
                       const SizedBox(height: 6),
-                      Text(money(totals['EUR'] ?? 0, 'EUR'),
+                      Amount(money(totals['EUR'] ?? 0, 'EUR'),
                           key: const Key('net-worth'),
                           style: const TextStyle(fontSize: 34, fontWeight: FontWeight.w700, letterSpacing: -1)),
                       for (final e in totals.entries)
                         if (e.key != 'EUR')
-                          Text('+ ${money(e.value, e.key)}', style: const TextStyle(color: AppColors.muted)),
+                          Amount('+ ${money(e.value, e.key)}', style: const TextStyle(color: AppColors.muted)),
                       const SizedBox(height: 18),
                       Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
                         _RoundAction(
@@ -544,7 +545,7 @@ class _AccountRow extends StatelessWidget {
         leading: Icon(hidden ? Icons.visibility_off_outlined : Icons.account_balance_wallet_outlined),
         title: Text(title, maxLines: 1, overflow: TextOverflow.ellipsis),
         subtitle: Text(sub, style: const TextStyle(color: AppColors.muted, fontSize: 12)),
-        trailing: Text(
+        trailing: Amount(
           balance == null ? '—' : money(balance['amount_cents'] as int, balance['currency'] as String?),
           style: const TextStyle(fontWeight: FontWeight.w600),
         ),

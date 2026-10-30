@@ -7,6 +7,7 @@ import '../core/periods.dart';
 import '../domain/cashflow.dart' as cashflow;
 import '../domain/reports.dart';
 import '../domain/to_categorize.dart';
+import 'polish.dart';
 import 'theme.dart';
 import 'widgets.dart';
 
@@ -97,7 +98,7 @@ class _HomeScreenState extends State<HomeScreen> {
           );
         }
         final data = snap.data;
-        if (data == null) return const Center(child: CircularProgressIndicator());
+        if (data == null) return const SkeletonPage();
         return RefreshIndicator(
           onRefresh: () async => _reload(),
           child: ListView(
@@ -128,19 +129,22 @@ class _HomeScreenState extends State<HomeScreen> {
       child: Padding(
         padding: const EdgeInsets.fromLTRB(16, 22, 16, 16),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          const Text('Patrimonio totale', style: TextStyle(color: AppColors.muted)),
-          const SizedBox(height: 4),
-          Text(money(totals[main] ?? 0, main),
-              key: const Key('home-net-worth'),
+          Row(children: [
+            const Expanded(child: Text('Patrimonio totale', style: TextStyle(color: AppColors.muted))),
+            const HideAmountsButton(),
+          ]),
+          AnimatedAmount(totals[main] ?? 0,
+              format: (c) => money(c, main),
+              textKey: const Key('home-net-worth'),
               style: const TextStyle(fontSize: 36, fontWeight: FontWeight.w700, letterSpacing: -1)),
           for (final e in totals.entries)
-            if (e.key != main) Text('+ ${money(e.value, e.key)}', style: const TextStyle(color: AppColors.muted)),
+            if (e.key != main) Amount('+ ${money(e.value, e.key)}', style: const TextStyle(color: AppColors.muted)),
           const SizedBox(height: 6),
           Row(children: [
             Icon(net >= 0 ? Icons.trending_up : Icons.trending_down,
                 size: 18, color: net >= 0 ? AppColors.pos : AppColors.neg),
             const SizedBox(width: 6),
-            Text('${net > 0 ? '+' : ''}${money(net)} questo mese',
+            Amount('${net > 0 ? '+' : ''}${money(net)} questo mese',
                 style: TextStyle(color: net >= 0 ? AppColors.pos : AppColors.neg)),
           ]),
           if (data.invested != 0)
@@ -149,7 +153,7 @@ class _HomeScreenState extends State<HomeScreen> {
               child: Row(children: [
                 const Icon(Icons.show_chart, size: 18, color: AppColors.accent),
                 const SizedBox(width: 6),
-                Text('Investito da agosto: ${money(data.invested)}',
+                Amount('Investito da agosto: ${money(data.invested)}',
                     key: const Key('home-invested'), style: const TextStyle(color: AppColors.muted)),
               ]),
             ),
@@ -214,7 +218,7 @@ class _HomeScreenState extends State<HomeScreen> {
     Widget split(String label, int value, Color color) => Expanded(
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Text(label, style: const TextStyle(color: AppColors.muted, fontSize: 12)),
-            Text(money(value), style: TextStyle(color: color, fontWeight: FontWeight.w600)),
+            Amount(money(value), style: TextStyle(color: color, fontWeight: FontWeight.w600)),
           ]),
         );
     return Card(
@@ -223,7 +227,8 @@ class _HomeScreenState extends State<HomeScreen> {
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           _SectionHead('Questo mese', action: 'Analisi', onTap: widget.onShowAnalysis),
           const Text('Speso finora', style: TextStyle(color: AppColors.muted)),
-          Text(money(summary['expense']), style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w700)),
+          AnimatedAmount(summary['expense']!,
+              format: money, style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w700)),
           const SizedBox(height: 10),
           Row(children: [
             split('Entrate', summary['income']!, AppColors.pos),
@@ -242,7 +247,10 @@ class _HomeScreenState extends State<HomeScreen> {
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           const _SectionHead('Dove spendi questo mese'),
           if (data.categories.isEmpty)
-            const Text('Nessuna spesa questo mese.', style: TextStyle(color: AppColors.muted)),
+            const Center(
+              child: EmptyState(
+                  icon: Icons.savings_outlined, title: 'Nessuna spesa questo mese', hint: 'Ottimo inizio!'),
+            ),
           for (final c in data.categories)
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 6),
@@ -253,7 +261,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                     Row(children: [
                       Expanded(child: Text(c['name'] as String, overflow: TextOverflow.ellipsis)),
-                      Text(money(c['total'] as int)),
+                      Amount(money(c['total'] as int)),
                     ]),
                     const SizedBox(height: 6),
                     ClipRRect(
@@ -283,9 +291,12 @@ class _HomeScreenState extends State<HomeScreen> {
               child: _SectionHead('Movimenti recenti', action: 'Vedi tutti', onTap: widget.onShowAll),
             ),
             if (data.days.isEmpty)
-              const Padding(
-                padding: EdgeInsets.fromLTRB(12, 0, 12, 8),
-                child: Text('Ancora nessun movimento.', style: TextStyle(color: AppColors.muted)),
+              const Center(
+                child: EmptyState(
+                  icon: Icons.receipt_long_outlined,
+                  title: 'Ancora nessun movimento',
+                  hint: 'Arriveranno con la prossima sincronizzazione: alle 7, alle 14 o alle 23.',
+                ),
               ),
             for (final (day, items) in data.days) ...[
               Padding(padding: const EdgeInsets.symmetric(horizontal: 8), child: DayHeader(day)),
@@ -339,7 +350,7 @@ class _AccountCard extends StatelessWidget {
         ]),
         Text('$name${currency != null && currency != 'EUR' ? ' · $currency' : ''}',
             maxLines: 1, overflow: TextOverflow.ellipsis),
-        Text(balance == null ? '—' : money(balance['amount_cents'] as int, balance['currency'] as String?),
+        Amount(balance == null ? '—' : money(balance['amount_cents'] as int, balance['currency'] as String?),
             style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700)),
       ]),
     );

@@ -29,7 +29,11 @@ il conto titoli non è leggibile tramite Enable Banking.
 - **Schede dei conti** scorrevoli in orizzontale.
 - **Avvisi:** consenso scaduto o in scadenza (con *Rinnova ora*).
 - **Questo mese:** speso finora, entrate e uscite; **Dove spendi questo mese:** le 6 categorie principali.
-- **Movimenti recenti** raggruppati per giorno. Tocca un movimento per il dettaglio.
+- **Movimenti recenti** raggruppati per giorno. Tocca un movimento per il dettaglio. Ogni movimento ha
+  un cerchio con le iniziali dell'esercente (colore fisso per esercente) e un piccolo badge con l'icona
+  della categoria.
+- **Nascondi importi:** l'occhio accanto a «Patrimonio totale» sfoca tutti gli importi e i grafici
+  dell'app, utile in pubblico. Resta attivo finché non lo togli, anche dopo aver chiuso l'app.
 
 ## Movimenti da categorizzare
 

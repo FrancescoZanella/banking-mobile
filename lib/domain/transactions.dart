@@ -108,6 +108,18 @@ class TxFilter {
 
   /// "Azzera filtri" tiene solo la ricerca.
   TxFilter cleared() => TxFilter(q: q);
+
+  /// Nessun filtro e nessuna ricerca: la lista mostra tutto.
+  bool get isEmpty =>
+      q.trim().isEmpty &&
+      accounts.isEmpty &&
+      categories.isEmpty &&
+      period == null &&
+      !_hasRange &&
+      direction == null &&
+      (min ?? '').isEmpty &&
+      (max ?? '').isEmpty &&
+      !hidden;
 }
 
 /// Query SQL con i filtri; stesso ordine e stesse colonne del web.
