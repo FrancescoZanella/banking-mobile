@@ -33,6 +33,13 @@ movimenti, spese ed entrate per categoria, flussi di cassa. I dati restano solo 
 
 ## Cosa fa
 
+<p align="center">
+  <img src="docs/img/home.png" width="200" alt="Home: patrimonio, conti e movimenti da categorizzare">
+  <img src="docs/img/movimenti.png" width="200" alt="Movimenti con i filtri attivi">
+  <img src="docs/img/flussi.png" width="200" alt="Flussi con il saldo per categoria">
+  <img src="docs/img/smista.png" width="200" alt="Smista: un movimento alla volta">
+</p>
+
 | Pagina | In breve |
 |---|---|
 | **Home** | patrimonio totale, schede dei conti, avvisi sui consensi, spese del mese, ultimi movimenti; riquadro *Da categorizzare* con la modalità **Smista** |
@@ -50,6 +57,8 @@ E inoltre:
   **annullare**.
 - **Notifiche dei movimenti da categorizzare**, con i pulsanti delle 3 categorie che scegli più spesso:
   un tocco salva la categoria senza aprire l'app.
+
+  <img src="docs/img/notifica.png" width="360" alt="Notifica di un movimento con i pulsanti delle categorie">
 - **Giroconti** tra i tuoi conti riconosciuti dall'IBAN o dal tuo nome: fuori dai totali di tutti i
   conti, contati quando guardi un conto solo.
 - **Investimenti** (scelti a mano): non sono spese, si sommano ai risparmiati.
@@ -81,6 +90,9 @@ L'app non è su Google Play. Due strade:
 ### A · Scarica l'APK pronto (consigliata)
 
 1. Nella pagina **Releases** di questa repository apri l'ultima versione e scarica `app-release.apk`.
+
+   <img src="docs/img/github-release.png" width="600" alt="Pagina della Release con l'APK tra gli allegati">
+
 2. Copia il file sul telefono (cavo USB, cartella *Download*).
 3. Sul telefono apri l'app **File** → *Download* → tocca l'APK → **Installa**. Android chiede di
    consentire l'installazione da questa sorgente: consentila solo per questa volta.
@@ -123,6 +135,9 @@ Sono pagine statiche, senza segreti e senza raccolta di dati. Per pubblicarle co
 2. Crea la cartella `app/` e caricaci i tre file. In `privacy.html` e `termini.html` sostituisci i testi
    tra `[parentesi quadre]` (nome, email, data). I modelli non sono una consulenza legale.
 3. *Settings → Pages*: sorgente **Deploy from a branch**, branch `main`, cartella `/ (root)`, **Save**.
+
+   <img src="docs/img/github-pages.png" width="600" alt="Impostazioni di GitHub Pages: branch main, cartella root">
+
 4. Dopo un minuto le pagine sono online:
    ```
    https://<utente>.github.io/banking-relay/app/              ritorno dalla banca
@@ -151,13 +166,20 @@ l'app: è normale).
      [`config.dart`](lib/core/config.dart); se hai compilato con la tua pagina, il tuo;
    - **privacy** e **termini**, se richiesti: gli indirizzi di `privacy.html` e `termini.html` del passo 2;
    - un'email di contatto, se richiesta.
+
+   <img src="docs/img/eb-nuova-applicazione.png" width="600" alt="Control Panel di Enable Banking: nuova applicazione">
+
 4. Alla creazione il sito genera la coppia di chiavi e **scarica il file `<APP_ID>.pem`**: è la **chiave
    privata** e viene data **una volta sola**.
    - L'**APP_ID** è l'identificativo dell'applicazione: è anche il nome del file senza `.pem`.
    - Tieni il `.pem` solo sul PC finché non l'hai importato nel telefono (passo 4). Mai in mail, chat,
      cloud o nella cartella del progetto. Conservane una copia cifrata nel password manager.
+
+   <img src="docs/img/eb-applicazione.png" width="600" alt="Pagina dell'applicazione su Enable Banking con i Redirect URL">
 5. **Collega i tuoi conti all'applicazione:** nella pagina dell'applicazione, nella sezione dei conti,
    collega le banche e i conti che vuoi vedere.
+
+   <img src="docs/img/eb-conti-collegati.png" width="600" alt="Conti collegati all'applicazione in modalità limitata">
 
 > ⚠️ **Modalità limitata:** l'applicazione legge **solo** i conti collegati qui. Se salti il punto 5 il
 > login con la banca riesce, ma l'app non riceve nessun conto. Per aggiungere una banca in futuro:
@@ -184,6 +206,8 @@ Apri **Banking Dashboard** e sbloccala con impronta, volto o PIN. Se Android chi
    copie.
 6. **Cancella subito il `.pem` dalla cartella Download** (e dal cestino dell'app File, se c'è).
 
+<img src="docs/img/impostazioni.png" width="260" alt="Impostazioni: APP_ID e scelta del file .pem">
+
 ✅ **Fatto quando:** in Impostazioni compare «APP_ID salvato: •••• ultime 4 cifre».
 
 ### 4.3 Collega la prima banca
@@ -194,6 +218,11 @@ Apri **Banking Dashboard** e sbloccala con impronta, volto o PIN. Se Android chi
 3. Al termine la banca torna alla pagina di ritorno, che riapre l'app. Compare l'esito e parte da solo il
    **recupero dello storico** (quanto la banca concede, spesso ~90 giorni).
 4. Ripeti per le altre banche.
+
+<p align="center">
+  <img src="docs/img/conti.png" width="260" alt="Conti: Collega banca e stato del consenso">
+  <img src="docs/img/scegli-banca.png" width="260" alt="Scelta della banca con la ricerca">
+</p>
 
 > Il consenso dura il massimo concesso dalla banca (circa **180 giorni**). Due settimane prima della
 > scadenza compaiono un avviso e una notifica: tocca **Rinnova** e rifai il login con la banca.

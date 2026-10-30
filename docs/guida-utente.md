@@ -29,6 +29,11 @@ il conto titoli non è leggibile tramite Enable Banking.
 
 ## Home
 
+<p align="center">
+  <img src="img/home.png" width="260" alt="Home">
+  <img src="img/nascondi-importi.png" width="260" alt="Home con «Nascondi importi» attivo">
+</p>
+
 - **Patrimonio totale** dei conti visibili e il saldo del mese (entrate meno uscite).
 - **Schede dei conti** scorrevoli in orizzontale.
 - **Avvisi:** consenso scaduto o in scadenza (con *Rinnova ora*).
@@ -40,6 +45,11 @@ il conto titoli non è leggibile tramite Enable Banking.
   dell'app, utile in pubblico. Resta attivo finché non lo togli, anche dopo aver chiuso l'app.
 
 ## Movimenti da categorizzare
+
+<p align="center">
+  <img src="img/notifica.png" width="360" alt="Notifica con i pulsanti delle categorie">
+  <img src="img/smista.png" width="260" alt="Smista: un movimento alla volta">
+</p>
 
 Quando una sincronizzazione porta movimenti nuovi che le regole non hanno saputo classificare (finiti in
 *Altre spese*, *Altre entrate* o senza categoria), arriva una **notifica per ciascuno**, per esempio
@@ -70,6 +80,8 @@ batteria). Senza, le notifiche possono arrivare solo quando apri l'app.
 
 ## Dettaglio di un movimento
 
+<img src="img/dettaglio.png" width="260" alt="Dettaglio di un movimento">
+
 Conto, date, descrizione, IBAN della controparte (mascherato), codice esercente. Da qui puoi:
 
 - **cambiare la categoria** (o tornare ad *Automatica*): nel menu le categorie sono ordinate dalla
@@ -83,6 +95,11 @@ Dopo ogni cambio di categoria (dal dettaglio, scorrendo una riga, con la selezio
 vibra leggermente e compare un messaggio con **Annulla**: rimette tutto com'era, regola compresa.
 
 ## Movimenti
+
+<p align="center">
+  <img src="img/movimenti.png" width="260" alt="Movimenti con i filtri attivi">
+  <img src="img/filtri.png" width="260" alt="Pannello Filtri">
+</p>
 
 Ricerca per esercente o descrizione; accanto, il pulsante **Filtri** (con il numero di quelli attivi)
 apre un pannello con Periodo (scorciatoie o intervallo dal/al), Tipo (tutti, uscite, entrate), Conti,
@@ -98,7 +115,14 @@ dal più recente (le banche non danno l'ora: nello stesso giorno prima quelli ar
   poi *Categoria* nella barra in basso assegna la stessa categoria a tutti, senza creare regole. La ✕ o
   il tasto Indietro chiudono la selezione.
 
+<p align="center">
+  <img src="img/scorrimento.png" width="260" alt="Movimento scorso verso sinistra">
+  <img src="img/selezione.png" width="260" alt="Selezione multipla con la barra in basso">
+</p>
+
 ## Analisi
+
+<img src="img/analisi.png" width="260" alt="Analisi del mese">
 
 Settimana, mese o anno, con le frecce per spostarsi (non oltre il periodo in corso, né prima di
 agosto 2026).
@@ -110,6 +134,8 @@ agosto 2026).
 - **Categorie:** tocca una categoria per vederne i movimenti; **Dove spendi di più:** gli esercenti.
 
 ## Flussi
+
+<img src="img/flussi.png" width="260" alt="Flussi con il saldo per categoria">
 
 Settimana, mese o anno, con le frecce per spostarsi:
 
@@ -131,6 +157,8 @@ non vengono mai sovrascritte.
 
 ## Conti (Altro → Conti)
 
+<img src="img/conti.png" width="260" alt="Conti: banche collegate e Collega banca">
+
 - **Collega banca:** prima collega il conto alla tua app nel Control Panel di Enable Banking, poi
   scegli la banca. Il login avviene in una scheda del browser in incognito; al ritorno l'app si riapre.
 - Per ogni banca: stato del consenso, **Rinnova**, **Scollega** (revoca il consenso, lo storico resta),
@@ -148,6 +176,8 @@ non vengono mai sovrascritte.
   compare l'avviso e arriva una notifica (solo nome della banca e giorni, mai importi).
 
 ## Impostazioni (Altro → Impostazioni)
+
+<img src="img/impostazioni.png" width="260" alt="Impostazioni: APP_ID e chiave .pem">
 
 APP_ID e chiave `.pem` dell'applicazione Enable Banking, salvati nel Keystore del telefono.
 
