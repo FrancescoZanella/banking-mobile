@@ -5,10 +5,9 @@
     ],
     "target": {
       "namespace": "android_app",
-      "package_name": "com.francescozanella.bankingmobile",
+      "package_name": "<nome del pacchetto, es. applicationId di android/app/build.gradle.kts>",
       "sha256_cert_fingerprints": [
-        "D2:7E:7E:26:C7:7E:A9:5E:7E:81:8B:42:23:76:A5:BC:F6:75:47:BC:07:BD:45:9B:76:92:3C:B5:D9:39:ED:C1",
-        "42:55:B8:08:53:5C:E9:5A:97:89:B1:C9:83:5E:08:D8:43:2D:46:F6:27:35:EE:E6:5C:6F:29:4E:52:CC:39:A5"
+        "<impronta SHA-256 del certificato di firma, es. AB:CD:...>"
       ]
     }
   }

@@ -51,15 +51,17 @@ Future<void> markNotified(DatabaseExecutor db, Iterable<String> ids, {DateTime? 
 /// Quante categorie mettere come pulsanti nella notifica (Android ne mostra 3).
 const quickCount = 3;
 
-/// Pulsanti della notifica: le categorie più scelte, dello stesso tipo del
-/// movimento (spesa o entrata). Prima quelle scelte a mano, poi le più usate.
-/// Mai giroconti né le categorie di ripiego.
-Future<List<Map<String, Object?>>> quickCategories(DatabaseExecutor db, {required bool income}) => db.rawQuery(
-      'SELECT c.id, c.name FROM categories c '
+/// Pulsanti della notifica e di «Smista»: le categorie più scelte, dello stesso
+/// tipo del movimento (spesa o entrata). Prima quelle scelte a mano, poi le più
+/// usate. Mai giroconti né le categorie di ripiego.
+Future<List<Map<String, Object?>>> quickCategories(DatabaseExecutor db,
+        {required bool income, int limit = quickCount}) =>
+    db.rawQuery(
+      'SELECT c.id, c.name, c.icon, c.color FROM categories c '
       'WHERE c.kind = ? AND c.name NOT IN (${fallbackCategories.map((_) => '?').join(', ')}) '
       'ORDER BY (SELECT count(*) FROM transactions t '
       "WHERE t.category_id = c.id AND t.category_source = 'manual') DESC, "
       '(SELECT count(*) FROM transactions t WHERE t.category_id = c.id) DESC, c.name '
       'LIMIT ?',
-      [income ? 'income' : 'expense', ...fallbackCategories, quickCount],
+      [income ? 'income' : 'expense', ...fallbackCategories, limit],
     );

@@ -8,6 +8,7 @@ import '../app/services.dart';
 import '../core/dates.dart';
 import '../core/money.dart';
 import '../domain/transactions.dart';
+import 'categorize_ui.dart';
 import 'polish.dart';
 import 'theme.dart';
 import 'widgets.dart';
@@ -81,6 +82,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
   void _apply(TxFilter f) {
     _filter = f;
     _page = 1;
+    _selected.clear(); // niente movimenti selezionati e poi nascosti dai filtri
     _reload();
   }
 
@@ -94,69 +96,144 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
     await widget.shareCsv(csv);
   }
 
+  /// Selezione multipla: id → importo (per proporre prima le categorie giuste).
+  final _selected = <String, int>{};
+
+  void _toggle(Map<String, Object?> t) => setState(() {
+        final id = t['id'] as String;
+        if (_selected.remove(id) == null) _selected[id] = t['amount_cents'] as int;
+      });
+
+  void _selectAll(TxPage page) => setState(() {
+        for (final (_, items, _) in page.days) {
+          for (final t in items) {
+            _selected[t['id'] as String] = t['amount_cents'] as int;
+          }
+        }
+      });
+
+  Future<void> _categorizeSelected() async {
+    final signs = {for (final cents in _selected.values) cents > 0};
+    final categoryId = await pickCategory(context,
+        income: signs.length == 1 ? signs.single : null,
+        title: 'Categoria per ${_selected.length} movimenti');
+    if (categoryId == null || !mounted) return;
+    await applyCategory(context, _selected.keys.toList(), categoryId);
+    if (mounted) setState(_selected.clear);
+  }
+
   @override
   Widget build(BuildContext context) {
     return FutureBuilder<(TxPage, _Lists)>(
       future: _data,
       builder: (context, snap) {
         final data = snap.data;
-        return CustomScrollView(slivers: [
-          SliverPadding(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-            sliver: SliverList.list(children: [
-              Row(children: [
-                const Expanded(child: Text('Movimenti', style: TextStyle(fontSize: 28, fontWeight: FontWeight.w700))),
-                IconButton(
-                  key: const Key('export-csv'),
-                  tooltip: 'Esporta CSV',
-                  icon: const Icon(Icons.ios_share),
-                  onPressed: _export,
-                ),
-              ]),
-              const SizedBox(height: 8),
-              Row(children: [
-                Expanded(
-                  child: TextField(
-                    key: const Key('tx-search'),
-                    controller: _search,
-                    onChanged: _onSearch,
-                    textInputAction: TextInputAction.search,
-                    decoration: InputDecoration(
-                      hintText: 'Cerca esercente o descrizione',
-                      prefixIcon: const Icon(Icons.search),
-                      suffixIcon: _search.text.isEmpty
-                          ? null
-                          : IconButton(
-                              icon: const Icon(Icons.close),
-                              onPressed: () {
-                                _search.clear();
-                                _apply(_filter.copyWith(q: ''));
-                              },
-                            ),
-                    ),
-                  ),
-                ),
-                if (data != null) ...[const SizedBox(width: 8), _filterButton(data.$2)],
-              ]),
-              if (data != null) _pills(data.$2),
-              const SizedBox(height: 12),
-              if (data != null) _tiles(data.$1),
-            ]),
-          ),
-          if (snap.hasError)
-            const SliverFillRemaining(
-              hasScrollBody: false,
-              child: Center(child: Text('Impossibile caricare i movimenti.')),
-            )
-          else if (data == null)
-            const SliverPadding(
-                padding: EdgeInsets.symmetric(horizontal: 16),
-                sliver: SliverToBoxAdapter(child: SkeletonPage(embedded: true, hero: false)))
-          else ..._list(data.$1),
-        ]);
+        // Indietro chiude la selezione invece di lasciare la pagina.
+        return PopScope(
+          canPop: _selected.isEmpty,
+          onPopInvokedWithResult: (didPop, _) {
+            if (!didPop) setState(_selected.clear);
+          },
+          child: Stack(children: [
+            _scroll(snap, data),
+            if (_selected.isNotEmpty && data != null) _selectionBar(data.$1),
+          ]),
+        );
       },
     );
   }
+
+  /// Barra in basso durante la selezione multipla.
+  Widget _selectionBar(TxPage page) => Positioned(
+        left: 12,
+        right: 12,
+        bottom: 12,
+        child: Material(
+          key: const Key('selection-bar'),
+          color: AppColors.surface3,
+          elevation: 6,
+          shape: const StadiumBorder(),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
+            child: Row(children: [
+              IconButton(
+                key: const Key('selection-close'),
+                tooltip: 'Chiudi selezione',
+                icon: const Icon(Icons.close),
+                onPressed: () => setState(_selected.clear),
+              ),
+              Expanded(
+                child: Text('${_selected.length} selezionat${_selected.length == 1 ? 'o' : 'i'}',
+                    style: const TextStyle(fontWeight: FontWeight.w600)),
+              ),
+              TextButton(key: const Key('select-all'), onPressed: () => _selectAll(page), child: const Text('Tutti')),
+              const SizedBox(width: 4),
+              FilledButton.icon(
+                key: const Key('selection-category'),
+                style: FilledButton.styleFrom(minimumSize: const Size(0, 44)),
+                onPressed: _categorizeSelected,
+                icon: const Icon(Icons.sell_outlined, size: 18),
+                label: const Text('Categoria'),
+              ),
+            ]),
+          ),
+        ),
+      );
+
+  Widget _scroll(AsyncSnapshot<(TxPage, _Lists)> snap, (TxPage, _Lists)? data) => CustomScrollView(slivers: [
+        SliverPadding(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+          sliver: SliverList.list(children: [
+            Row(children: [
+              const Expanded(child: Text('Movimenti', style: TextStyle(fontSize: 28, fontWeight: FontWeight.w700))),
+              IconButton(
+                key: const Key('export-csv'),
+                tooltip: 'Esporta CSV',
+                icon: const Icon(Icons.ios_share),
+                onPressed: _export,
+              ),
+            ]),
+            const SizedBox(height: 8),
+            Row(children: [
+              Expanded(
+                child: TextField(
+                  key: const Key('tx-search'),
+                  controller: _search,
+                  onChanged: _onSearch,
+                  textInputAction: TextInputAction.search,
+                  decoration: InputDecoration(
+                    hintText: 'Cerca esercente o descrizione',
+                    prefixIcon: const Icon(Icons.search),
+                    suffixIcon: _search.text.isEmpty
+                        ? null
+                        : IconButton(
+                            icon: const Icon(Icons.close),
+                            onPressed: () {
+                              _search.clear();
+                              _apply(_filter.copyWith(q: ''));
+                            },
+                          ),
+                  ),
+                ),
+              ),
+              if (data != null) ...[const SizedBox(width: 8), _filterButton(data.$2)],
+            ]),
+            if (data != null) _pills(data.$2),
+            const SizedBox(height: 12),
+            if (data != null) _tiles(data.$1),
+          ]),
+        ),
+        if (snap.hasError)
+          const SliverFillRemaining(
+            hasScrollBody: false,
+            child: Center(child: Text('Impossibile caricare i movimenti.')),
+          )
+        else if (data == null)
+          const SliverPadding(
+              padding: EdgeInsets.symmetric(horizontal: 16),
+              sliver: SliverToBoxAdapter(child: SkeletonPage(embedded: true, hero: false)))
+        else ..._list(data.$1),
+      ]);
 
   /// Pulsante «Filtri» accanto alla ricerca, con il numero di filtri attivi.
   Widget _filterButton(_Lists lists) {
@@ -283,7 +360,16 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                 DayHeader(day, total: total),
                 Card(
                   key: Key('day-${day ?? 'none'}'),
-                  child: Column(children: [for (final t in items) FeedItem(tx: t, onChanged: _reload)]),
+                  child: Column(children: [
+                    for (final t in items)
+                      FeedItem(
+                        tx: t,
+                        onChanged: _reload,
+                        selected: _selected.isEmpty ? null : _selected.containsKey(t['id']),
+                        onSelect: () => _toggle(t),
+                        onLongPress: () => _toggle(t),
+                      ),
+                  ]),
                 ),
               ]);
             },
@@ -306,7 +392,8 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
               ]),
             ),
           ),
-        const SliverToBoxAdapter(child: SizedBox(height: 32)),
+        // Spazio per la barra della selezione multipla, che copre il fondo.
+        SliverToBoxAdapter(child: SizedBox(height: _selected.isEmpty ? 32 : 96)),
       ];
 }
 

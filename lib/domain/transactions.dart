@@ -326,12 +326,9 @@ Future<String?> setCategory(Database db, String txId, int? categoryId, {bool mak
       if (cats.isEmpty) return null;
       final category = cats.first;
       final transfer = category['kind'] == 'transfer';
-      await t.rawUpdate(
-        "UPDATE transactions SET category_id = ?, category_source = 'manual', is_internal = ? WHERE id = ?",
-        [categoryId, transfer ? 1 : 0, txId],
-      );
+      await _setManual(t, txId, category);
       final counterparty = txs.first['counterparty'] as String?;
-      final pattern = (counterparty ?? '').trim().toLowerCase();
+      final pattern = rulePattern(counterparty);
       if (makeRule && transfer) {
         return 'Segnato come giroconto. Per i giroconti non si creano regole: '
             'vanno indicati movimento per movimento.';
@@ -347,4 +344,69 @@ Future<String?> setCategory(Database db, String txId, int? categoryId, {bool mak
         return 'Regola creata: «$counterparty» → ${category['name']}.';
       }
       return null;
+    });
+
+/// Testo della regola creata da «Applica a tutti i movimenti di …».
+String rulePattern(String? counterparty) => (counterparty ?? '').trim().toLowerCase();
+
+/// Categoria scelta a mano: un giroconto diventa interno, il resto no.
+Future<void> _setManual(DatabaseExecutor t, String txId, Map<String, Object?> category) => t.rawUpdate(
+      "UPDATE transactions SET category_id = ?, category_source = 'manual', is_internal = ? WHERE id = ?",
+      [category['id'], category['kind'] == 'transfer' ? 1 : 0, txId],
+    );
+
+/// Stessa categoria a più movimenti (selezione multipla), senza regole.
+Future<void> setCategoryMany(Database db, Iterable<String> txIds, int categoryId) => db.transaction((t) async {
+      final cats = await t.query('categories', where: 'id = ?', whereArgs: [categoryId]);
+      if (cats.isEmpty) return;
+      for (final id in txIds) {
+        await _setManual(t, id, cats.first);
+      }
+    });
+
+/// Com'erano dei movimenti (ed eventualmente una regola) prima di un cambio di
+/// categoria: serve ad «Annulla».
+class CategoryUndo {
+  CategoryUndo._(this._rows, this._rulePattern, this._rule);
+  final List<Map<String, Object?>> _rows;
+  final String? _rulePattern;
+
+  /// La regola con lo stesso testo che c'era prima, se c'era.
+  final Map<String, Object?>? _rule;
+}
+
+/// Fotografia prima del cambio. [rulePattern]: il testo della regola che il
+/// cambio potrebbe creare o modificare.
+Future<CategoryUndo> categorySnapshot(DatabaseExecutor db, List<String> txIds, {String? rulePattern}) async {
+  final rows = await db.rawQuery(
+    'SELECT id, category_id, category_source, is_internal FROM transactions '
+    'WHERE id IN (${List.filled(txIds.length, '?').join(', ')})',
+    txIds,
+  );
+  final rules = rulePattern == null
+      ? const <Map<String, Object?>>[]
+      : await db.query('category_rules', where: "field = 'text' AND pattern = ?", whereArgs: [rulePattern]);
+  return CategoryUndo._(rows, rulePattern, rules.firstOrNull);
+}
+
+/// «Annulla»: rimette movimenti e regola com'erano.
+Future<void> undoCategory(Database db, CategoryUndo undo) => db.transaction((t) async {
+      for (final r in undo._rows) {
+        await t.rawUpdate(
+          'UPDATE transactions SET category_id = ?, category_source = ?, is_internal = ? WHERE id = ?',
+          [r['category_id'], r['category_source'], r['is_internal'], r['id']],
+        );
+      }
+      final pattern = undo._rulePattern;
+      if (pattern == null) return;
+      if (undo._rule case final rule?) {
+        await t.rawUpdate(
+          "UPDATE category_rules SET category_id = ?, priority = ? WHERE field = 'text' AND pattern = ?",
+          [rule['category_id'], rule['priority'], pattern],
+        );
+      } else {
+        await t.rawDelete("DELETE FROM category_rules WHERE field = 'text' AND pattern = ?", [pattern]);
+      }
+      // La regola tolta o ripristinata cambia anche gli altri movimenti automatici.
+      await recategorize(t);
     });

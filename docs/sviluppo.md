@@ -5,10 +5,10 @@
 | Percorso | Contenuto |
 |---|---|
 | `lib/` | codice dell'app, vedi [Architettura](architettura.md) |
-| `test/` | test di logica e delle schermate, uno per area (`bank`, `transactions`, `analysis_flows`, `budget_categories`, `security`, `to_categorize`, `return_links`, `preferences`, `investments`, …): 98 test |
+| `test/` | test di logica e delle schermate, uno per area (`bank`, `transactions`, `analysis_flows`, `cashflow`, `budget_categories`, `security`, `to_categorize`, `return_links`, `preferences`, `investments`, `polish`, `interaction`, …): 112 test |
 | `integration_test/` | test da eseguire sul telefono |
 | `android/` | progetto Android: manifest, risorse, `MainActivity.kt`, firma e R8 (`app/build.gradle.kts`, `app/proguard-rules.pro`) |
-| `relay/` | sorgenti delle pagine pubbliche (ritorno dalla banca, `assetlinks.json`) |
+| `relay/` | sorgenti delle pagine pubbliche: ritorno dalla banca, modelli di privacy e termini (`relay/app/`), `assetlinks.json` (`relay/user-site/`) |
 | `assets/icon.png` | logo mostrato nella schermata di sblocco |
 | `docs/` | documentazione |
 
@@ -31,8 +31,6 @@ git log --all --name-only --pretty=format: | sort -u | grep -iE "\.pem$|\.jks$|\
 git grep -nE "BEGIN [A-Z ]*PRIVATE KEY" -- ':!test' ':!docs'
 ```
 
-L'ultimo controllo completo della cronologia (28/10/2026) non ha trovato segreti.
-
 ## Test
 
 ```
@@ -51,7 +49,6 @@ aspettare con `tester.runAsync` una sincronizzazione avviata dall'app: resterebb
   ferma mai.
 - `integration_test/`: cifratura del DB sul telefono. **Alla fine il test disinstalla l'app**: dopo,
   va reinstallata e ricollegata.
-- Ogni test del web ha il suo corrispondente: aggiorna [parita-test.md](parita-test.md) quando ne aggiungi.
 
 ## Versioni fissate
 
@@ -73,12 +70,18 @@ Prima di aggiornare Flutter, togli questi vincoli e rilancia tutti i test.
 ## Telefono di prova
 
 - Xiaomi con HyperOS 2: confermare "Installa" sul telefono a ogni installazione via adb.
-  "Spazio insufficiente" compare come `INSTALL_FAILED_USER_RESTRICTED`.
+  "Spazio insufficiente" compare come `INSTALL_FAILED_USER_RESTRICTED`; se la conferma scade, installa
+  copiando l'APK in *Download* (vedi [Installazione](installazione.md#5-installazione-sul-telefono)).
 
 ## Convenzioni
 
 - Importi sempre in **centesimi interi**, mai `double`.
 - Date di calendario come `DateTime` UTC a mezzanotte (`core/dates.dart`).
 - Testi dell'interfaccia in italiano.
+- Il codice è formattato a mano (righe fino a 120 caratteri): **non lanciare `dart format`** sui file
+  esistenti, con Dart 3.8 riscriverebbe interi file nello stile nuovo.
+- Ogni cambio di categoria dall'interfaccia passa da `applyCategory` (`ui/categorize_ui.dart`), così
+  vibrazione, notifiche e «Annulla» restano coerenti.
+- I testi con importi usano `Amount` e i grafici `Sensitive` (`ui/polish.dart`), altrimenti «Nascondi
+  importi» non li sfoca.
 - Nessun log con dati bancari o segreti, né in debug né in release.
-- Commit e push solo su richiesta.

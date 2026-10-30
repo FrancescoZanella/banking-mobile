@@ -1,5 +1,8 @@
 # Guida all'uso
 
+Come installarla e configurarla la prima volta (Enable Banking, `.pem`, APP_ID, prime banche) è nel
+[README](../README.md#passo-1--scarica-o-compila-lapp). Qui c'è come si usa.
+
 L'app (icona: banca bianca su viola) si apre con lo sblocco del telefono (impronta, volto o PIN) e si
 blocca da sola dopo 30 minuti senza tocchi. Se il telefono sembra avere i permessi di root, dopo lo
 sblocco compare un avviso (l'app resta utilizzabile). La barra in basso ha cinque voci: **Home, Analisi, Movimenti, Flussi, Altro**
@@ -14,10 +17,11 @@ come uscite; filtrando un solo conto in Movimenti contano, perché per quel cont
 usciti o entrati. Restano visibili nell'elenco con l'etichetta «Giroconto» e in Flussi nel riquadro
 «Spostato tra i tuoi conti».
 
-**Investimenti** (per esempio gli acquisti di titoli): si assegnano **a mano**, scegliendo la
-categoria *Investimenti* dal dettaglio del movimento; non c'è riconoscimento automatico. Sono
-**risparmio, non spesa**: restano nell'elenco dei Movimenti, ma **non rientrano in nessun conteggio di
-uscite o spese** (Home, Analisi, Flussi, totali di Movimenti, anche filtrando il conto titoli). Sono
+**Investimenti** (per esempio gli acquisti di titoli o i versamenti al conto titoli): si assegnano **a
+mano**, scegliendo la categoria *Investimenti* dal dettaglio del movimento; non c'è riconoscimento
+automatico. Sono **risparmio, non spesa**: restano nell'elenco dei Movimenti, ma **non rientrano in
+nessun conteggio di uscite o spese** (Home, Analisi, Flussi, totali di Movimenti, anche filtrando un
+solo conto). Sono
 sommati ai risparmiati (le vendite riducono l'investito). In Flussi, in alto: *Risparmiati* e *Investiti*,
 sempre visibili anche a zero. In Home, sotto il patrimonio, la riga
 **«Investito da agosto»** ricorda i soldi passati al conto titoli, che il patrimonio non mostra perché
@@ -55,6 +59,10 @@ prossimi.
 - **Schermata di blocco:** esercente, importo e pulsanti restano nascosti finché non sblocchi il telefono.
 - **Riquadro «Da categorizzare» in Home:** gli stessi movimenti dell'ultimo mese, anche se hai
   ignorato la notifica. Sparisce quando non ce ne sono più.
+- **Smista:** il pulsante nel riquadro mostra i movimenti uno alla volta, con le 6 categorie che scegli
+  più spesso come pulsanti grandi (più *Altra categoria…*). Un tocco salva e passa al successivo;
+  *Salta per ora* lo lascia com'è; *Indietro* annulla l'ultima scelta. Puoi anche spuntare *Applica a
+  tutti i movimenti di «…»* per creare una regola.
 
 **Su Xiaomi (HyperOS):** perché la sincronizzazione in background parta davvero, imposta la batteria
 dell'app su *Nessuna restrizione* (Impostazioni → App → Gestisci app → Banking Dashboard → Risparmio
@@ -71,6 +79,9 @@ Conto, date, descrizione, IBAN della controparte (mascherato), codice esercente.
 
 Scegliere *Giroconti* segna il movimento come giroconto. Per i giroconti non si creano regole.
 
+Dopo ogni cambio di categoria (dal dettaglio, scorrendo una riga, con la selezione multipla) il telefono
+vibra leggermente e compare un messaggio con **Annulla**: rimette tutto com'era, regola compresa.
+
 ## Movimenti
 
 Ricerca per esercente o descrizione; accanto, il pulsante **Filtri** (con il numero di quelli attivi)
@@ -80,6 +91,12 @@ applicano con *Mostra risultati*. I filtri attivi restano sotto la ricerca come 
 riaprire il pannello, la ✕ la toglie, *Azzera* le toglie tutte tranne la ricerca. In alto i totali, sotto i movimenti per giorno con il totale del giorno,
 dal più recente (le banche non danno l'ora: nello stesso giorno prima quelli arrivati per ultimi);
 *Mostra altri* allunga l'elenco. L'icona di condivisione esporta in **CSV** i movimenti filtrati.
+
+- **Scorri un movimento verso sinistra** (anche in Home) per scegliere subito la categoria, senza aprire
+  il dettaglio. Verso destra non succede nulla.
+- **Tieni premuto un movimento** per la selezione multipla: tocca gli altri da aggiungere (o *Tutti*),
+  poi *Categoria* nella barra in basso assegna la stessa categoria a tutti, senza creare regole. La ✕ o
+  il tasto Indietro chiudono la selezione.
 
 ## Analisi
 
@@ -150,6 +167,10 @@ Non finiscono su Google, sul PC o su GitHub. Vedi [Sicurezza](sicurezza.md).
 **Cosa succede se disinstallo l'app o cambio telefono?** I dati sul telefono si perdono (il backup è
 disattivato apposta). Si reinseriscono APP_ID e `.pem`, si ricollegano le banche e l'app riscarica lo
 storico che ogni banca concede (spesso ~90 giorni).
+
+**Come aggiungo un'altra banca?** Prima collega i suoi conti alla tua applicazione nel Control Panel di
+Enable Banking (modalità limitata: senza questo passaggio non arriva nessun conto), poi in app
+*Altro → Conti → Collega banca*. Vedi il [README](../README.md#passo-3--crea-lapplicazione-su-enable-banking).
 
 **Perché un movimento è in «Altre spese»?** Nessuna regola l'ha riconosciuto. Apri il dettaglio, scegli
 la categoria e spunta *Applica a tutti i movimenti di «…»*: varrà anche per i prossimi.

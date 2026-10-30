@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../app/services.dart';
 import '../core/dates.dart';
@@ -6,6 +7,7 @@ import '../core/money.dart';
 import '../core/periods.dart';
 import '../domain/reports.dart';
 import '../domain/transactions.dart';
+import 'categorize_ui.dart';
 import 'polish.dart';
 import 'theme.dart';
 
@@ -130,18 +132,57 @@ class DayHeader extends StatelessWidget {
       );
 }
 
-/// Una riga del feed (_feed_item.html): tocco → dettaglio.
+/// Una riga del feed (_feed_item.html): tocco → dettaglio; scorrendo verso
+/// sinistra si sceglie la categoria. Con [selected] non null la riga è in
+/// selezione multipla: il tocco la seleziona o deseleziona.
 class FeedItem extends StatelessWidget {
-  const FeedItem({super.key, required this.tx, required this.onChanged});
+  const FeedItem(
+      {super.key, required this.tx, required this.onChanged, this.selected, this.onSelect, this.onLongPress});
   final Map<String, Object?> tx;
 
   /// Chiamata dopo un cambio di categoria dal dettaglio.
   final VoidCallback onChanged;
 
+  /// In selezione multipla: se la riga è selezionata. Null = lista normale.
+  final bool? selected;
+  final VoidCallback? onSelect;
+
+  /// Pressione lunga: avvia la selezione multipla (dove prevista).
+  final VoidCallback? onLongPress;
+
   @override
   Widget build(BuildContext context) {
     final t = tx;
+    final txId = t['id'] as String;
     final cents = t['amount_cents'] as int;
+    final selecting = selected != null;
+    final tile = _tile(context, t, cents, selecting);
+    if (selecting) return tile;
+    return Dismissible(
+      key: ValueKey('swipe-$txId'),
+      direction: DismissDirection.endToStart,
+      dismissThresholds: const {DismissDirection.endToStart: .25},
+      background: Container(
+        color: AppColors.accent,
+        alignment: Alignment.centerRight,
+        padding: const EdgeInsets.only(right: 20),
+        child: const Row(mainAxisSize: MainAxisSize.min, children: [
+          Icon(Icons.sell_outlined, color: Colors.white),
+          SizedBox(width: 8),
+          Text('Categoria', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+        ]),
+      ),
+      // La riga torna sempre al suo posto: lo scorrimento apre solo il selettore.
+      confirmDismiss: (_) async {
+        final categoryId = await pickCategory(context, income: cents > 0);
+        if (categoryId != null && context.mounted) await applyCategory(context, [txId], categoryId);
+        return false;
+      },
+      child: tile,
+    );
+  }
+
+  Widget _tile(BuildContext context, Map<String, Object?> t, int cents, bool selecting) {
     final pending = t['status'] == 'PDNG';
     final sub = [
       t['category_name'] as String? ?? 'Senza categoria',
@@ -154,7 +195,20 @@ class FeedItem extends StatelessWidget {
       child: ListTile(
         key: ValueKey('tx-${t['id']}'),
         contentPadding: const EdgeInsets.symmetric(horizontal: 12),
-        leading: TxAvatar(tx: t),
+        selected: selected ?? false,
+        selectedTileColor: AppColors.accent.withValues(alpha: .14),
+        leading: AnimatedSwitcher(
+          duration: const Duration(milliseconds: 180),
+          child: selected == true
+              ? Container(
+                  key: const ValueKey('check'),
+                  width: 40,
+                  height: 40,
+                  decoration: const BoxDecoration(color: AppColors.accent, shape: BoxShape.circle),
+                  child: const Icon(Icons.check, color: Colors.white),
+                )
+              : TxAvatar(key: const ValueKey('avatar'), tx: t),
+        ),
         title: Text(txTitle(t), maxLines: 1, overflow: TextOverflow.ellipsis),
         subtitle: Text(sub,
             maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: AppColors.muted, fontSize: 12)),
@@ -162,9 +216,17 @@ class FeedItem extends StatelessWidget {
           signedMoney(cents, t['currency'] as String?),
           style: TextStyle(fontWeight: FontWeight.w600, color: cents > 0 ? AppColors.pos : AppColors.text),
         ),
-        onTap: () async {
-          if (await showTransactionDetail(context, t['id'] as String)) onChanged();
-        },
+        onLongPress: onLongPress == null
+            ? null
+            : () {
+                HapticFeedback.selectionClick();
+                onLongPress!();
+              },
+        onTap: selecting
+            ? onSelect
+            : () async {
+                if (await showTransactionDetail(context, t['id'] as String)) onChanged();
+              },
       ),
     );
   }
@@ -210,14 +272,9 @@ class _TransactionDetailState extends State<_TransactionDetail> {
   }
 
   Future<void> _save() async {
-    final s = Services.of(context);
-    final message = await setCategory(s.db, widget.txId, _selected, makeRule: _makeRule);
-    s.sync.notifyChanged(); // aggiorna Home e Movimenti
-    await s.dismissNotification(widget.txId);
+    // Aggiorna Home e Movimenti, toglie la notifica e propone «Annulla».
+    await applyCategory(context, [widget.txId], _selected, makeRule: _makeRule);
     if (!mounted) return;
-    if (message != null) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
-    }
     _changed = true;
     Navigator.of(context).pop(true);
   }

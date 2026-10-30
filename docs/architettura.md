@@ -1,9 +1,7 @@
 # Architettura
 
 L'app è autonoma: **nessun server e nessuna porta aperta**. Tutto sta sul telefono e l'unica
-connessione è in uscita verso `https://api.enablebanking.com`. La logica è la stessa della versione
-web (`banking-dashboard/app/`), riscritta in Dart; i test di [parità](parita-test.md) garantiscono che
-il risultato coincida.
+connessione è in uscita verso `https://api.enablebanking.com`.
 
 ## Moduli
 
@@ -21,9 +19,15 @@ lib/
                        schedule (orari 7/14/23 ora italiana), background (WorkManager,
                        notifiche di scadenza e dei movimenti con i pulsanti delle categorie)
   domain/              categorize, reports, analysis, cashflow, transactions, categories,
-                       to_categorize (movimenti da notificare), budget (solo logica: pagina tolta)
+                       to_categorize (movimenti da notificare), budget (non usato dall'interfaccia)
   security/            app_lock (sblocco biometrico, 30 minuti di inattività)
-  ui/                  una schermata per pagina + widgets (feed, dettaglio, avvisi, periodo) e charts
+  ui/                  una schermata per pagina (home, analysis, transactions, flows, categories,
+                       accounts, settings, lock, shell) e inoltre:
+                       widgets (riga del feed con scorrimento e selezione, dettaglio, avvisi, periodo),
+                       charts (grafici fl_chart e barre divergenti), polish (avatar degli esercenti,
+                       «Nascondi importi», sagome di caricamento, numeri animati, schermate vuote),
+                       categorize_ui (selettore delle categorie, cambio con vibrazione e «Annulla»),
+                       sort_screen («Smista»)
 ```
 
 **Codice nativo** (`android/app/src/main/kotlin/…/MainActivity.kt`), raggiunto con due MethodChannel:
@@ -41,9 +45,11 @@ All'avvio `MainActivity` imposta `FLAG_SECURE` e svuota le cartelle temporanee d
 `raw/keep.xml` perché è usata per nome dal codice Dart), `xml/network_security_config.xml` e
 `xml/data_extraction_rules.xml`.
 
-**Pagine pubbliche** (sorgenti in `relay/`, pubblicate con GitHub Pages): `relay/app/index.html` è la
-pagina di ritorno dalla banca (repo `Bankrelay`), `relay/user-site/` contiene `assetlinks.json` (repo
-`francescozanella.github.io`).
+**Pagine pubbliche** (sorgenti in `relay/`, pubblicate con GitHub Pages): in `relay/app/` la pagina di
+ritorno dalla banca (`index.html`) e i modelli di informativa privacy e termini (`privacy.html`,
+`termini.html`), da pubblicare in una repository come `banking-relay`; in `relay/user-site/` il modello di
+`assetlinks.json` per l'App Link, da pubblicare nella repository `<utente>.github.io`. Come pubblicarle è
+nel [README](../README.md#passo-2--pubblica-le-pagine-pubbliche) e in [Installazione](installazione.md).
 
 Le schermate leggono il DB direttamente tramite le funzioni di `domain/` e si ricaricano quando
 `SyncRunner` notifica un cambiamento (sincronizzazione, banca collegata, categoria cambiata).
@@ -54,8 +60,8 @@ Le schermate leggono il DB direttamente tramite le funzioni di `domain/` e si ri
 1. Conti → Collega banca: il nome scelto viene validato contro il catalogo di Enable Banking.
 2. `bank_service` crea uno `state` casuale (32 byte, monouso, scade in 20 minuti) e ottiene
    l'indirizzo di login; la pagina si apre in una Custom Tab effimera (incognito).
-3. La banca rimanda alla relay `https://francescozanella.github.io/Bankrelay/app`, che grazie all'App
-   Link verificato riapre direttamente l'app (in alternativa rimanda a `bankingmobile://callback`).
+3. La banca rimanda alla pagina relay (`AppConfig.redirectUri`), che grazie all'App Link verificato
+   riapre direttamente l'app (in alternativa la pagina rimanda a `bankingmobile://callback`).
 4. L'app accetta il ritorno solo con uno `state` valido, crea la sessione, salva banca e conti e
    avvia il recupero dello storico.
 
@@ -68,6 +74,24 @@ Le schermate leggono il DB direttamente tramite le funzioni di `domain/` e si ri
   giorni), mostra una notifica privata per ciascuno (canale «movimenti», raggruppate) e li segna.
 - Il tocco porta l'id del movimento nel payload; `BankingApp` lo tiene da parte finché l'app è
   bloccata e dopo lo sblocco apre il dettaglio. Salvando la categoria la notifica viene tolta.
+- I **pulsanti delle categorie** (al massimo 3, limite di Android) sono le categorie più scelte dello
+  stesso tipo del movimento (`quickCategories`: prima quelle scelte a mano, poi le più usate; mai
+  giroconti né categorie di ripiego). Il tocco arriva all'`ActionBroadcastReceiver` del plugin (non
+  esportato, dichiarato nel manifest), che avvia un motore Flutter a parte ed esegue
+  `onNotificationAction`: apre il DB con una connessione propria e chiama `setCategory` senza regola.
+
+**Cambio di categoria dall'interfaccia** (`ui/categorize_ui.dart`)
+- Dettaglio, scorrimento verso sinistra, selezione multipla in Movimenti e «Smista» passano tutti da
+  `applyCategory`: prima `categorySnapshot` fotografa movimenti (categoria, origine, `is_internal`) ed
+  eventuale regola con lo stesso testo; poi salva, toglie le notifiche, notifica le pagine e vibra.
+- «Annulla» chiama `undoCategory`: rimette i movimenti, toglie la regola creata (o ripristina quella che
+  c'era) e, se ha toccato una regola, ricalcola le categorie automatiche.
+- «Smista» (`ui/sort_screen.dart`) usa le stesse funzioni e tiene una pila di fotografie per «Indietro».
+
+**Nascondi importi**
+- `AppServices.hideAmounts` (`ValueNotifier`) salvato nella tabella `settings` (`hide_amounts`) e letto
+  all'avvio. I testi con importi usano `Amount`, i grafici `Sensitive`: con il valore attivo vengono
+  sfocati (`ImageFiltered`) ed esclusi dai lettori di schermo.
 - **Movimenti in attesa:** a ogni sincronizzazione vengono cancellati e riscaricati. Prima di
   cancellarli `storeTransactions` ne ricorda categoria manuale e `notified_at` e li passa al movimento
   che li sostituisce: stesso id, oppure stesso importo e stessa controparte entro 7 giorni.
@@ -87,11 +111,11 @@ Le schermate leggono il DB direttamente tramite le funzioni di `domain/` e si ri
 ## Dati
 
 Database SQLCipher nella memoria privata dell'app; la chiave (256 bit casuali) è nel Keystore,
-utilizzabile anche senza sblocco per permettere la sincronizzazione in background. Le tabelle sono le
-stesse del web: `banks`, `consents`, `accounts`, `balances`, `transactions`, `categories`,
-`category_rules`, `budgets`, `subscription_ignores`, `pending_auth`, `sync_runs`, `settings`.
-In più: `transactions.notified_at` (notifiche «da categorizzare») e `categories.investment`
-(categoria di investimento).
+utilizzabile anche senza sblocco per permettere la sincronizzazione in background. Tabelle: `banks`,
+`consents`, `accounts`, `balances`, `transactions`, `categories`, `category_rules`, `budgets`,
+`subscription_ignores`, `pending_auth`, `sync_runs`, `settings`. Da notare `transactions.notified_at`
+(notifiche «da categorizzare»), `categories.investment` (categoria di investimento) e l'impostazione
+`hide_amounts` («Nascondi importi»).
 
 **Regole dei conteggi** (`domain/reports.dart`):
 
@@ -108,16 +132,3 @@ precedenti, `initDb` cancella quelli già presenti, grafici e confronti non vann
 
 **Ordine dei movimenti** (`txOrder`): data contabile dal più recente; nello stesso giorno (le banche non
 danno l'ora) prima quelli scaricati per ultimi.
-
-## Differenze volute rispetto al web
-
-- Sblocco biometrico al posto di password, setup e "Cambia password".
-- Sincronizzazione anche in background, con notifica dei consensi in scadenza.
-- Barra di navigazione Home, Analisi, Movimenti, Flussi, Altro; dettaglio del movimento e filtri come
-  pannelli dal basso.
-- Niente pagina Budget e abbonamenti (tolta su richiesta).
-- Dati dal 1 agosto 2026; giroconti neutri sul totale e reali sul singolo conto; categoria
-  Investimenti; Flussi anche per settimana e divisi per categoria; menu delle categorie dalla più usata.
-- Notifiche dei movimenti da categorizzare.
-- Export CSV con la condivisione di Android.
-- Colore delle categorie scelto da una tavolozza invece del selettore libero.

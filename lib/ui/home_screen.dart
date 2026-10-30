@@ -8,6 +8,7 @@ import '../domain/cashflow.dart' as cashflow;
 import '../domain/reports.dart';
 import '../domain/to_categorize.dart';
 import 'polish.dart';
+import 'sort_screen.dart';
 import 'theme.dart';
 import 'widgets.dart';
 
@@ -197,9 +198,24 @@ class _HomeScreenState extends State<HomeScreen> {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 12),
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text('Da categorizzare (${rows.length})',
-                  style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w600)),
-              const Text('Le regole non li hanno riconosciuti: tocca un movimento per scegliere la categoria.',
+              Row(children: [
+                Expanded(
+                  child: Text('Da categorizzare (${rows.length})',
+                      style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w600)),
+                ),
+                FilledButton.icon(
+                  key: const Key('open-sort'),
+                  style: FilledButton.styleFrom(minimumSize: const Size(0, 38)),
+                  onPressed: () async {
+                    await Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const SortScreen()));
+                    _reload();
+                  },
+                  icon: const Icon(Icons.style_outlined, size: 18),
+                  label: const Text('Smista'),
+                ),
+              ]),
+              const Text('Le regole non li hanno riconosciuti: smistali uno alla volta, tocca un movimento '
+                  'o scorrilo verso sinistra.',
                   style: TextStyle(color: AppColors.muted, fontSize: 13)),
             ]),
           ),
