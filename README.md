@@ -21,7 +21,7 @@ movimenti, spese ed entrate per categoria, flussi di cassa. I dati restano solo 
 1. [Cosa fa](#cosa-fa)
 2. [Cosa serve](#cosa-serve)
 3. [Passo 1 · Scarica o compila l'app](#passo-1--scarica-o-compila-lapp)
-4. [Passo 2 · Pubblica le pagine pubbliche](#passo-2--pubblica-le-pagine-pubbliche)
+4. [Passo 2 · Copia gli indirizzi pronti](#passo-2--copia-gli-indirizzi-pronti)
 5. [Passo 3 · Crea l'applicazione su Enable Banking](#passo-3--crea-lapplicazione-su-enable-banking)
 6. [Passo 4 · Primo avvio: APP_ID, chiave e banche](#passo-4--primo-avvio-app_id-chiave-e-banche)
 7. [Limiti](#limiti)
@@ -66,11 +66,10 @@ Il funzionamento pagina per pagina è nella [Guida all'uso](docs/guida-utente.md
 - Un **telefono Android 9+** con un blocco schermo (impronta, volto o PIN): l'app si apre solo così.
 - Un **account [Enable Banking](https://enablebanking.com)** (gratuito per uso personale, in modalità
   limitata).
-- Un **account GitHub** per pubblicare tre piccole pagine statiche con GitHub Pages (passo 2).
 - Un **PC** con il cavo USB, per copiare sul telefono la chiave `.pem` (ed eventualmente l'APK). Serve
   solo all'inizio e per gli aggiornamenti.
 
-Tempo indicativo: 30-45 minuti la prima volta.
+Tempo indicativo: 20-30 minuti la prima volta.
 
 ---
 
@@ -86,10 +85,8 @@ L'app non è su Google Play. Due strade:
    consentire l'installazione da questa sorgente: consentila solo per questa volta.
 4. Cancella l'APK da *Download*.
 
-> L'APK delle Release è firmato e usa la **pagina di ritorno già impostata nella build**: il suo
-> indirizzo è `AppConfig.redirectUri` in [`lib/core/config.dart`](lib/core/config.dart) ed è quello da
-> registrare su Enable Banking (passo 3). In questo caso del passo 2 ti servono solo le pagine di
-> privacy e termini. Per usare una **tua** pagina di ritorno devi compilare l'app (strada B).
+> L'APK delle Release è firmato e usa le **pagine pubbliche già pronte** del passo 2: non devi
+> pubblicare niente. Per usare pagine tue devi compilare l'app (strada B).
 
 ### B · Compila dal codice
 
@@ -102,40 +99,33 @@ flutter build apk --release --obfuscate --split-debug-info=build/symbols --targe
 ```
 
 Prima della build servono l'ambiente (Flutter 3.32.4, Android SDK 36, NDK 27) e **una tua chiave di
-firma**. Se usi una tua pagina di ritorno vanno cambiati l'indirizzo, l'App Link e il pacchetto nella
+firma**. Se usi pagine tue vanno cambiati l'indirizzo di ritorno, l'App Link e il pacchetto nella
 pagina relay. Tutto passo per passo in [Installazione](docs/installazione.md).
 
 ---
 
-## Passo 2 · Pubblica le pagine pubbliche
+## Passo 2 · Copia gli indirizzi pronti
 
-Enable Banking chiede degli indirizzi `https://` pubblici:
+Enable Banking chiede alcuni indirizzi `https://` pubblici. Sono già online, uguali per tutti:
 
-| Pagina | File nella repo | A cosa serve |
-|---|---|---|
-| **Ritorno dalla banca** | [`relay/app/index.html`](relay/app/index.html) | dopo il login la banca torna qui; la pagina riapre subito l'app passandole `code` e `state` |
-| **Informativa privacy** | [`relay/app/privacy.html`](relay/app/privacy.html) | modello da completare: chi tratta i dati, dove restano, come revocare |
-| **Termini di utilizzo** | [`relay/app/termini.html`](relay/app/termini.html) | modello da completare: app personale, sola lettura, nessuna garanzia |
+| Pagina | Indirizzo |
+|---|---|
+| **Ritorno dalla banca** (Redirect URL) | `https://francescozanella.github.io/Bankrelay/app/` |
+| **Informativa privacy** | `https://francescozanella.github.io/Bankrelay/app/privacy.html` |
+| **Termini di utilizzo** | `https://francescozanella.github.io/Bankrelay/app/termini.html` |
 
-Sono pagine statiche, senza segreti e senza raccolta di dati. Per pubblicarle con GitHub Pages:
+- Sono pagine **statiche**: non contengono segreti e non raccolgono dati. La pagina di ritorno riapre
+  soltanto l'app sul tuo telefono, passandole `code` e `state`.
+- Il `code` è monouso e senza il **tuo** `.pem` non serve a niente: chi pubblica le pagine non può
+  leggere i tuoi conti.
+- Privacy e termini valgono per chiunque usi l'app: ognuno è l'unico titolare dei propri dati, che
+  restano sul suo telefono.
+- Con l'APK delle Release il ritorno dalla banca apre l'app direttamente (App Link verificato).
+- Servono solo quando colleghi una banca o rinnovi il consenso (circa ogni 180 giorni), non per la
+  sincronizzazione.
 
-1. Su GitHub crea una repository **pubblica**, per esempio `banking-relay`.
-2. Crea la cartella `app/` e caricaci i tre file. In `privacy.html` e `termini.html` sostituisci i testi
-   tra `[parentesi quadre]` (nome, email, data). I modelli non sono una consulenza legale.
-3. *Settings → Pages*: sorgente **Deploy from a branch**, branch `main`, cartella `/ (root)`, **Save**.
-4. Dopo un minuto le pagine sono online:
-   ```
-   https://<utente>.github.io/banking-relay/app/              ritorno dalla banca
-   https://<utente>.github.io/banking-relay/app/privacy.html  privacy
-   https://<utente>.github.io/banking-relay/app/termini.html  termini
-   ```
-
-✅ **Fatto quando:** i tre indirizzi si aprono nel browser (la pagina di ritorno prova subito ad aprire
-l'app: è normale).
-
-> **App Link (facoltativo, consigliato se compili):** pubblicando anche `assetlinks.json` nella
-> repository `<utente>.github.io`, il ritorno dalla banca apre l'app direttamente, senza passare dalla
-> pagina. Come fare è in [Installazione](docs/installazione.md#app-link-verificato).
+I sorgenti sono in [`relay/app/`](relay/app/). Per pubblicare pagine tue vedi
+[Installazione](docs/installazione.md#3-pagina-di-ritorno-propria-facoltativo).
 
 ---
 
@@ -146,11 +136,10 @@ l'app: è normale).
    finte). Per uso personale va bene la **modalità limitata** (*restricted*).
 3. Compila il modulo:
    - **nome** dell'applicazione (es. «Banking Dashboard telefono»);
-   - **Redirect URL:** l'indirizzo della pagina di ritorno, **identico** carattere per carattere
-     (maiuscole e `/` finale comprese). Con l'APK delle Release è `AppConfig.redirectUri` di
-     [`config.dart`](lib/core/config.dart); se hai compilato con la tua pagina, il tuo;
-   - **privacy** e **termini**, se richiesti: gli indirizzi di `privacy.html` e `termini.html` del passo 2;
-   - un'email di contatto, se richiesta.
+   - **Redirect URL:** `https://francescozanella.github.io/Bankrelay/app/`, **identico** carattere per
+     carattere (maiuscole e `/` finale comprese);
+   - **privacy** e **termini**, se richiesti: gli altri due indirizzi del passo 2;
+   - un'email di contatto, se richiesta: la **tua**.
 4. Alla creazione il sito genera la coppia di chiavi e **scarica il file `<APP_ID>.pem`**: è la **chiave
    privata** e viene data **una volta sola**.
    - L'**APP_ID** è l'identificativo dell'applicazione: è anche il nome del file senza `.pem`.

@@ -51,7 +51,9 @@ chiave di debug.
 
 ## 3. Pagina di ritorno propria (facoltativo)
 
-L'APK delle Release usa la pagina di ritorno già scritta nel codice. Per usarne una tua (per esempio
+L'APK delle Release usa le pagine pubbliche già pronte (ritorno, privacy e termini, elencate nel
+[README](../README.md#passo-2--copia-gli-indirizzi-pronti)), valide per chiunque. Serve una pagina tua
+solo se non vuoi dipendere da quelle. Per usarne una tua (per esempio
 `https://<utente>.github.io/banking-relay/app/`), prima della build cambia questi punti:
 
 | Dove | Cosa |
@@ -72,8 +74,17 @@ cambi, cambialo anche nella pagina relay e in `assetlinks.json`.
 python -c "import re,hashlib,base64;s=open('relay/app/index.html',encoding='utf-8').read();print(base64.b64encode(hashlib.sha256(re.search(r'<script>(.*?)</script>',s,re.S).group(1).encode()).digest()).decode())"
 ```
 
-Poi pubblica le pagine come spiegato nel [README](../README.md#passo-2--pubblica-le-pagine-pubbliche)
-e registra il nuovo indirizzo tra i Redirect URL della tua applicazione Enable Banking.
+**Pubblicare le pagine con GitHub Pages:**
+
+1. Su GitHub crea una repository **pubblica**, per esempio `banking-relay`.
+2. Crea la cartella `app/` e caricaci `index.html`, `privacy.html` e `termini.html` da
+   [`relay/app/`](../relay/app/). I testi di privacy e termini valgono per chiunque usi l'app; puoi
+   adattarli.
+3. *Settings → Pages*: sorgente **Deploy from a branch**, branch `main`, cartella `/ (root)`, **Save**.
+4. Dopo un minuto le pagine sono online, per esempio `https://<utente>.github.io/banking-relay/app/`
+   (la pagina di ritorno prova subito ad aprire l'app: è normale).
+
+Infine registra il nuovo indirizzo tra i Redirect URL della tua applicazione Enable Banking.
 
 ## App Link verificato
 

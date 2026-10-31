@@ -45,11 +45,12 @@ All'avvio `MainActivity` imposta `FLAG_SECURE` e svuota le cartelle temporanee d
 `raw/keep.xml` perché è usata per nome dal codice Dart), `xml/network_security_config.xml` e
 `xml/data_extraction_rules.xml`.
 
-**Pagine pubbliche** (sorgenti in `relay/`, pubblicate con GitHub Pages): in `relay/app/` la pagina di
-ritorno dalla banca (`index.html`) e i modelli di informativa privacy e termini (`privacy.html`,
-`termini.html`), da pubblicare in una repository come `banking-relay`; in `relay/user-site/` il modello di
-`assetlinks.json` per l'App Link, da pubblicare nella repository `<utente>.github.io`. Come pubblicarle è
-nel [README](../README.md#passo-2--pubblica-le-pagine-pubbliche) e in [Installazione](installazione.md).
+**Pagine pubbliche** (sorgenti in `relay/`, pubblicate con GitHub Pages e condivise da tutti gli
+utenti dell'APK della Release): in `relay/app/` la pagina di ritorno dalla banca (`index.html`),
+l'informativa privacy (`privacy.html`) e i termini (`termini.html`); in `relay/user-site/` il modello di
+`assetlinks.json` per l'App Link. Gli indirizzi sono nel
+[README](../README.md#passo-2--copia-gli-indirizzi-pronti); per pubblicarne di propri vedi
+[Installazione](installazione.md#3-pagina-di-ritorno-propria-facoltativo).
 
 Le schermate leggono il DB direttamente tramite le funzioni di `domain/` e si ricaricano quando
 `SyncRunner` notifica un cambiamento (sincronizzazione, banca collegata, categoria cambiata).

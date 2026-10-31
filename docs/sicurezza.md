@@ -105,5 +105,7 @@ Come l'app protegge i dati, secondo le aree della checklist **OWASP MASVS v2**, 
   telefono.
 - **Chiave `.pem`:** chi la ottiene può leggere i conti finché il consenso è valido. In quel caso si
   revoca l'applicazione nel Control Panel di Enable Banking.
-- **Pagine pubbliche su GitHub Pages:** non contengono dati. Se qualcuno potesse modificarle, al massimo
-  romperebbe il ritorno dalla banca, perché lo `state` resta comunque necessario.
+- **Pagine pubbliche su GitHub Pages** (condivise da tutti gli utenti dell'APK della Release): non
+  contengono dati. Se qualcuno potesse modificarle, al massimo romperebbe il ritorno dalla banca: lo
+  `state` resta necessario e il `code` è monouso e inutile senza il `.pem` di chi lo usa. Se venissero
+  tolte, collegare o rinnovare una banca non funzionerebbe più; la sincronizzazione sì.
