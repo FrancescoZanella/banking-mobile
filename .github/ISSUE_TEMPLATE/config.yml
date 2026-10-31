@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Segnalare una vulnerabilità
+    url: https://github.com/FrancescoZanella/banking-mobile/security/advisories/new
+    about: Le falle di sicurezza vanno segnalate in privato, non con un'issue pubblica.

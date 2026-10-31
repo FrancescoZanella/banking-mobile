@@ -28,6 +28,8 @@ movimenti, spese ed entrate per categoria, flussi di cassa. I dati restano solo 
 8. [Sicurezza in breve](#sicurezza-in-breve)
 9. [Documentazione](#documentazione)
 10. [Per chi sviluppa](#per-chi-sviluppa)
+11. [Contribuire](#contribuire)
+12. [Licenza](#licenza)
 
 ---
 
@@ -275,7 +277,26 @@ test/              test di logica e delle schermate
 integration_test/  test sul telefono (cifratura del database)
 android/           progetto Android: manifest, icone, codice nativo (MainActivity.kt), firma
 docs/              documentazione
+.github/           controlli automatici (GitHub Actions), modelli di issue e pull request
 ```
 
 Mai su GitHub: `.pem`, chiavi di firma, `key.properties`, database, CSV esportati. Vedi
 [Sviluppo](docs/sviluppo.md#cosa-non-va-mai-su-github).
+
+---
+
+## Contribuire
+
+Le proposte sono benvenute: le funzioni da fare sono nelle [issue](https://github.com/FrancescoZanella/banking-mobile/issues)
+con l'etichetta `help wanted`. Come proporre una modifica è spiegato in [CONTRIBUTING.md](CONTRIBUTING.md).
+
+A ogni pull request partono da soli tre controlli (GitHub Actions): **analisi e test**, **build Android**
+e **nessun segreto nella repo**. Una PR si unisce solo se sono tutti verdi.
+
+Le **vulnerabilità** non vanno nelle issue: si segnalano in privato, vedi [SECURITY.md](SECURITY.md).
+
+---
+
+## Licenza
+
+[MIT](LICENSE) © 2026 Francesco Zanella.
