@@ -1,7 +1,7 @@
 # Installazione
 
-Questa guida serve per **compilare** l'app, per usare una **tua pagina di ritorno**, per pubblicare una
-**Release** e per gli **aggiornamenti**. Il primo utilizzo (Enable Banking, `.pem`, APP_ID, banche) è
+Questa guida serve per **compilare** l'app, per pubblicare una **Release** e per gli
+**aggiornamenti**. Il primo utilizzo (Enable Banking, `.pem`, APP_ID, banche) è
 nel [README](../README.md).
 
 ## 1. Ambiente sul PC
@@ -45,73 +45,16 @@ Nel percorso usa le barre `/` (oppure `\\`): una `\` singola in un file `.proper
 > solo se è firmato con la stessa chiave: senza, l'unica strada è disinstallare l'app (perdendo i dati
 > sul telefono) e ricollegare le banche.
 
+> **Non cambiare il nome del pacchetto** (`applicationId` in `android/app/build.gradle.kts`): la
+> pagina di ritorno condivisa riapre l'app proprio con quel nome. Con una chiave diversa da quella della
+> Release l'App Link non risulta verificato: il ritorno dalla banca funziona lo stesso, ma passa dalla
+> pagina, che riapre l'app (a volte con un tocco su «Torna all'app»).
+
 Per una chiave in un altro percorso imposta `BANKING_MOBILE_KEY_PROPERTIES` con il percorso del suo
 `key.properties`. Senza chiave la build di release si ferma con un errore: non viene mai firmata con la
 chiave di debug.
 
-## 3. Pagina di ritorno propria (facoltativo)
-
-L'APK delle Release usa le pagine pubbliche già pronte (ritorno, privacy e termini, elencate nel
-[README](../README.md#passo-2--copia-gli-indirizzi-pronti)), valide per chiunque. Serve una pagina tua
-solo se non vuoi dipendere da quelle. Per usarne una tua (per esempio
-`https://<utente>.github.io/banking-relay/app/`), prima della build cambia questi punti:
-
-| Dove | Cosa |
-|---|---|
-| [`lib/core/config.dart`](../lib/core/config.dart) | `AppConfig.redirectUri`: il tuo indirizzo, con la `/` finale. Deve essere **identico** al Redirect URL registrato su Enable Banking |
-| [`AndroidManifest.xml`](../android/app/src/main/AndroidManifest.xml) | nell'`intent-filter` con `autoVerify`: `android:host` (`<utente>.github.io`) e `android:pathPrefix` (`/banking-relay/app`) |
-| [`relay/app/index.html`](../relay/app/index.html) | solo se cambi il nome del pacchetto: `package=…` nello script, poi ricalcola l'hash della CSP (sotto) |
-
-Il nome del pacchetto (`applicationId` e `namespace` in
-[`android/app/build.gradle.kts`](../android/app/build.gradle.kts)) può restare quello della repo. Se lo
-cambi, cambialo anche nella pagina relay e in `assetlinks.json`.
-
-**Hash della CSP della pagina relay.** La pagina accetta solo lo script con l'hash scritto nella sua
-`Content-Security-Policy`. Se modifichi lo script, ricalcolalo e sostituiscilo in `script-src
-'sha256-…'`:
-
-```bash
-python -c "import re,hashlib,base64;s=open('relay/app/index.html',encoding='utf-8').read();print(base64.b64encode(hashlib.sha256(re.search(r'<script>(.*?)</script>',s,re.S).group(1).encode()).digest()).decode())"
-```
-
-**Pubblicare le pagine con GitHub Pages:**
-
-1. Su GitHub crea una repository **pubblica**, per esempio `banking-relay`.
-2. Crea la cartella `app/` e caricaci `index.html`, `privacy.html` e `termini.html` da
-   [`relay/app/`](../relay/app/). I testi di privacy e termini valgono per chiunque usi l'app; puoi
-   adattarli.
-3. *Settings → Pages*: sorgente **Deploy from a branch**, branch `main`, cartella `/ (root)`, **Save**.
-4. Dopo un minuto le pagine sono online, per esempio `https://<utente>.github.io/banking-relay/app/`
-   (la pagina di ritorno prova subito ad aprire l'app: è normale).
-
-Infine registra il nuovo indirizzo tra i Redirect URL della tua applicazione Enable Banking.
-
-## App Link verificato
-
-Senza App Link il ritorno dalla banca funziona lo stesso: la banca apre la pagina relay, che rimanda
-all'app con `bankingmobile://callback`. Con l'App Link verificato Android apre **direttamente** l'app,
-senza passare dal browser.
-
-1. Leggi l'impronta SHA-256 del certificato con cui firmi:
-   ```bash
-   apksigner verify --print-certs build/app/outputs/flutter-apk/app-release.apk
-   ```
-2. Crea `.well-known/assetlinks.json` con il nome del pacchetto e l'impronta (il modello è in
-   [`relay/user-site/.well-known/assetlinks.json`](../relay/user-site/.well-known/assetlinks.json):
-   sostituisci `package_name` e `sha256_cert_fingerprints`).
-3. Pubblicalo nella **repository del sito utente** di GitHub Pages, quella chiamata
-   `<utente>.github.io`, insieme a un file vuoto `.nojekyll` (altrimenti GitHub non pubblica le
-   cartelle che iniziano con il punto). Deve rispondere a
-   `https://<utente>.github.io/.well-known/assetlinks.json`.
-4. Installa l'app e controlla sul telefono:
-   ```bash
-   adb shell pm get-app-links <nome del pacchetto>
-   ```
-   Il dominio deve risultare `verified`.
-
-Se cambi la chiave di firma, aggiungi la nuova impronta in `assetlinks.json`.
-
-## 4. Build di release
+## 3. Build di release
 
 ```bash
 flutter build apk --release --obfuscate --split-debug-info=build/symbols --target-platform android-arm64
@@ -123,7 +66,7 @@ flutter build apk --release --obfuscate --split-debug-info=build/symbols --targe
 
 Il file è `build/app/outputs/flutter-apk/app-release.apk`.
 
-## 5. Installazione sul telefono
+## 4. Installazione sul telefono
 
 **Senza cavo dati:** copia l'APK nella cartella *Download* del telefono, aprilo dall'app *File* e
 tocca **Installa** (o **Aggiorna**). Poi cancella l'APK.
@@ -148,7 +91,7 @@ adb shell rm /data/local/tmp/bankingmobile.apk
 **Da debug a release:** le due build hanno firme diverse, quindi la prima volta l'app di debug va
 disinstallata; i dati sul telefono si perdono.
 
-## 6. Pubblicare una Release
+## 5. Pubblicare una Release
 
 Per chi installa senza compilare. Con la [GitHub CLI](https://cli.github.com):
 
@@ -162,8 +105,8 @@ gh release create v1.0.0 build/app/outputs/flutter-apk/app-release.apk --title "
 - Se la repository è privata, la Release è visibile solo a chi ha accesso alla repository.
 - L'APK non contiene segreti: APP_ID e `.pem` si inseriscono nell'app dopo l'installazione.
 
-## 7. Aggiornare l'app
+## 6. Aggiornare l'app
 
 1. `git pull`, poi `flutter test --timeout 60s` (devono essere tutti verdi).
-2. Build di release (punto 4) con **la stessa chiave**.
-3. Installazione (punto 5): con la stessa firma i dati restano.
+2. Build di release (punto 3) con **la stessa chiave**.
+3. Installazione (punto 4): con la stessa firma i dati restano.

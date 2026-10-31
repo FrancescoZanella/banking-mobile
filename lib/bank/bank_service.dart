@@ -35,12 +35,13 @@ class AuthStart {
 /// programmazione (Error) non vengono nascosti.
 bool _isCatalogError(Object e) => e is Exception;
 
-/// Indirizzi di ritorno accettati: il deep link della relay
-/// (bankingmobile://callback) e l'App Link verificato sulla relay stessa.
+/// Indirizzi di ritorno accettati: il deep link della pagina di ritorno
+/// (bankingmobile://callback) e l'App Link verificato sulla pagina stessa,
+/// solo con il suo percorso esatto (privacy e termini restano nel browser).
 bool isCallbackUri(Uri uri) {
   if (uri.scheme == AppConfig.callbackScheme) return uri.host == AppConfig.callbackHost;
-  final relay = Uri.parse(AppConfig.redirectUri);
-  return uri.scheme == 'https' && uri.host == relay.host && uri.path.startsWith(relay.path.replaceAll(RegExp(r'/$'), ''));
+  final page = Uri.parse(AppConfig.redirectUri);
+  return uri.scheme == 'https' && uri.host == page.host && uri.path == page.path;
 }
 
 /// Messaggio leggibile per un errore di rete o dell'API.

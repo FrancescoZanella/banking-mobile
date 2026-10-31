@@ -86,11 +86,11 @@ L'app non è su Google Play. Due strade:
 4. Cancella l'APK da *Download*.
 
 > L'APK delle Release è firmato e usa le **pagine pubbliche già pronte** del passo 2: non devi
-> pubblicare niente. Per usare pagine tue devi compilare l'app (strada B).
+> pubblicare niente.
 
 ### B · Compila dal codice
 
-Serve per modificare l'app o per usare una pagina di ritorno tua. In breve:
+Serve solo per modificare l'app. In breve:
 
 ```bash
 flutter pub get
@@ -99,8 +99,7 @@ flutter build apk --release --obfuscate --split-debug-info=build/symbols --targe
 ```
 
 Prima della build servono l'ambiente (Flutter 3.32.4, Android SDK 36, NDK 27) e **una tua chiave di
-firma**. Se usi pagine tue vanno cambiati l'indirizzo di ritorno, l'App Link e il pacchetto nella
-pagina relay. Tutto passo per passo in [Installazione](docs/installazione.md).
+firma**. Tutto passo per passo in [Installazione](docs/installazione.md).
 
 ---
 
@@ -110,9 +109,9 @@ Enable Banking chiede alcuni indirizzi `https://` pubblici. Sono già online, ug
 
 | Pagina | Indirizzo |
 |---|---|
-| **Ritorno dalla banca** (Redirect URL) | `https://francescozanella.github.io/Bankrelay/app/` |
-| **Informativa privacy** | `https://francescozanella.github.io/Bankrelay/app/privacy.html` |
-| **Termini di utilizzo** | `https://francescozanella.github.io/Bankrelay/app/termini.html` |
+| **Ritorno dalla banca** (Redirect URL) | `https://francescozanella.github.io/banking/` |
+| **Informativa privacy** | `https://francescozanella.github.io/banking/privacy.html` |
+| **Termini di utilizzo** | `https://francescozanella.github.io/banking/termini.html` |
 
 - Sono pagine **statiche**: non contengono segreti e non raccolgono dati. La pagina di ritorno riapre
   soltanto l'app sul tuo telefono, passandole `code` e `state`.
@@ -124,8 +123,8 @@ Enable Banking chiede alcuni indirizzi `https://` pubblici. Sono già online, ug
 - Servono solo quando colleghi una banca o rinnovi il consenso (circa ogni 180 giorni), non per la
   sincronizzazione.
 
-I sorgenti sono in [`relay/app/`](relay/app/). Per pubblicare pagine tue vedi
-[Installazione](docs/installazione.md#3-pagina-di-ritorno-propria-facoltativo).
+Stanno tutte nella repository pubblica
+[`francescozanella.github.io`](https://github.com/FrancescoZanella/francescozanella.github.io).
 
 ---
 
@@ -136,7 +135,7 @@ I sorgenti sono in [`relay/app/`](relay/app/). Per pubblicare pagine tue vedi
    finte). Per uso personale va bene la **modalità limitata** (*restricted*).
 3. Compila il modulo:
    - **nome** dell'applicazione (es. «Banking Dashboard telefono»);
-   - **Redirect URL:** `https://francescozanella.github.io/Bankrelay/app/`, **identico** carattere per
+   - **Redirect URL:** `https://francescozanella.github.io/banking/`, **identico** carattere per
      carattere (maiuscole e `/` finale comprese);
    - **privacy** e **termini**, se richiesti: gli altri due indirizzi del passo 2;
    - un'email di contatto, se richiesta: la **tua**.
@@ -275,7 +274,6 @@ lib/               codice dell'app (core, data, bank, sync, domain, security, ui
 test/              test di logica e delle schermate
 integration_test/  test sul telefono (cifratura del database)
 android/           progetto Android: manifest, icone, codice nativo (MainActivity.kt), firma
-relay/             pagine pubbliche: ritorno dalla banca, privacy, termini, assetlinks.json
 docs/              documentazione
 ```
 

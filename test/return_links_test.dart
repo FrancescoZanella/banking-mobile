@@ -40,8 +40,8 @@ class FakeLinks implements LinkSource {
   }
 }
 
-const vecchio = 'https://francescozanella.github.io/Bankrelay/app/?state=vecchio&code=x';
-const nuovo = 'https://francescozanella.github.io/Bankrelay/app/?state=nuovo&code=y';
+const vecchio = 'https://francescozanella.github.io/banking/?state=vecchio&code=x';
+const nuovo = 'https://francescozanella.github.io/banking/?state=nuovo&code=y';
 
 Future<List<String>> collect(LinkSource source, [Future<void> Function()? during]) async {
   final got = <String>[];

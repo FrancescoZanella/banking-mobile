@@ -27,8 +27,9 @@ class AppConfig {
   /// Blocco dell'app dopo inattività (come il logout del web).
   static const idleLock = Duration(minutes: 30);
 
-  /// Pagina relay (GitHub Pages) che riporta all'app dopo il login con la banca.
-  static const redirectUri = 'https://francescozanella.github.io/Bankrelay/app/';
+  /// Pagina di ritorno (GitHub Pages) che riapre l'app dopo il login con la banca.
+  /// Deve coincidere con il Redirect URL registrato su Enable Banking.
+  static const redirectUri = 'https://francescozanella.github.io/banking/';
   static const callbackScheme = 'bankingmobile';
   static const callbackHost = 'callback';
 }

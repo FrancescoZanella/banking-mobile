@@ -45,12 +45,11 @@ All'avvio `MainActivity` imposta `FLAG_SECURE` e svuota le cartelle temporanee d
 `raw/keep.xml` perché è usata per nome dal codice Dart), `xml/network_security_config.xml` e
 `xml/data_extraction_rules.xml`.
 
-**Pagine pubbliche** (sorgenti in `relay/`, pubblicate con GitHub Pages e condivise da tutti gli
-utenti dell'APK della Release): in `relay/app/` la pagina di ritorno dalla banca (`index.html`),
-l'informativa privacy (`privacy.html`) e i termini (`termini.html`); in `relay/user-site/` il modello di
-`assetlinks.json` per l'App Link. Gli indirizzi sono nel
-[README](../README.md#passo-2--copia-gli-indirizzi-pronti); per pubblicarne di propri vedi
-[Installazione](installazione.md#3-pagina-di-ritorno-propria-facoltativo).
+**Pagine pubbliche**, condivise da tutti gli utenti e pubblicate con GitHub Pages dalla repository
+pubblica [`francescozanella.github.io`](https://github.com/FrancescoZanella/francescozanella.github.io):
+in `banking/` la pagina di ritorno dalla banca, l'informativa privacy e i termini; in
+`.well-known/assetlinks.json` l'App Link. Gli indirizzi sono nel
+[README](../README.md#passo-2--copia-gli-indirizzi-pronti).
 
 Le schermate leggono il DB direttamente tramite le funzioni di `domain/` e si ricaricano quando
 `SyncRunner` notifica un cambiamento (sincronizzazione, banca collegata, categoria cambiata).
@@ -61,7 +60,7 @@ Le schermate leggono il DB direttamente tramite le funzioni di `domain/` e si ri
 1. Conti → Collega banca: il nome scelto viene validato contro il catalogo di Enable Banking.
 2. `bank_service` crea uno `state` casuale (32 byte, monouso, scade in 20 minuti) e ottiene
    l'indirizzo di login; la pagina si apre in una Custom Tab effimera (incognito).
-3. La banca rimanda alla pagina relay (`AppConfig.redirectUri`), che grazie all'App Link verificato
+3. La banca rimanda alla pagina di ritorno (`AppConfig.redirectUri`), che grazie all'App Link verificato
    riapre direttamente l'app (in alternativa la pagina rimanda a `bankingmobile://callback`).
 4. L'app accetta il ritorno solo con uno `state` valido, crea la sessione, salva banca e conti e
    avvia il recupero dello storico.

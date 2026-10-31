@@ -47,7 +47,7 @@
                 <category android:name="android.intent.category.BROWSABLE"/>
                 <data android:scheme="bankingmobile" android:host="callback"/>
             </intent-filter>
-            <!-- App Link verificato: l'indirizzo di ritorno https della relay apre
+            <!-- App Link verificato: l'indirizzo di ritorno https apre
                  direttamente l'app (anche se lo apre l'app della banca o il Chrome
                  normale), senza passare dalla pagina. Verificato tramite
                  https://francescozanella.github.io/.well-known/assetlinks.json. -->
@@ -55,7 +55,7 @@
                 <action android:name="android.intent.action.VIEW"/>
                 <category android:name="android.intent.category.DEFAULT"/>
                 <category android:name="android.intent.category.BROWSABLE"/>
-                <data android:scheme="https" android:host="francescozanella.github.io" android:pathPrefix="/Bankrelay/app"/>
+                <data android:scheme="https" android:host="francescozanella.github.io" android:path="/banking/"/>
             </intent-filter>
         </activity>
         <!-- Pulsanti delle categorie nelle notifiche: non esportato, solo le

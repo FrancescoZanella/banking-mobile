@@ -215,12 +215,14 @@ void main() {
     expect(await scalar(db, 'SELECT hidden FROM accounts WHERE id = ?', [zeta]), 0);
   });
 
-  test('indirizzi di ritorno: solo deep link e App Link della relay', () {
+  test('indirizzi di ritorno: solo deep link e App Link della pagina di ritorno', () {
     expect(isCallbackUri(Uri.parse('bankingmobile://callback?state=a&code=b')), isTrue);
-    expect(isCallbackUri(Uri.parse('https://francescozanella.github.io/Bankrelay/app/?state=a&code=b')), isTrue);
-    expect(isCallbackUri(Uri.parse('https://francescozanella.github.io/Bankrelay/?state=a')), isFalse); // relay del web
-    expect(isCallbackUri(Uri.parse('https://evil.example/Bankrelay/app/?state=a')), isFalse);
-    expect(isCallbackUri(Uri.parse('http://francescozanella.github.io/Bankrelay/app/?state=a')), isFalse);
+    expect(isCallbackUri(Uri.parse('https://francescozanella.github.io/banking/?state=a&code=b')), isTrue);
+    expect(isCallbackUri(Uri.parse('https://francescozanella.github.io/banking/privacy.html')), isFalse);
+    expect(isCallbackUri(Uri.parse('https://francescozanella.github.io/bankingx/?state=a')), isFalse);
+    expect(isCallbackUri(Uri.parse('https://francescozanella.github.io/Bankrelay/app/?state=a')), isFalse); // vecchio indirizzo
+    expect(isCallbackUri(Uri.parse('https://evil.example/banking/?state=a')), isFalse);
+    expect(isCallbackUri(Uri.parse('http://francescozanella.github.io/banking/?state=a')), isFalse);
     expect(isCallbackUri(Uri.parse('bankingmobile://altro?state=a')), isFalse);
   });
 

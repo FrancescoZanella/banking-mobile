@@ -8,7 +8,6 @@
 | `test/` | test di logica e delle schermate, uno per area (`bank`, `transactions`, `analysis_flows`, `cashflow`, `budget_categories`, `security`, `to_categorize`, `return_links`, `preferences`, `investments`, `polish`, `interaction`, …): 112 test |
 | `integration_test/` | test da eseguire sul telefono |
 | `android/` | progetto Android: manifest, risorse, `MainActivity.kt`, firma e R8 (`app/build.gradle.kts`, `app/proguard-rules.pro`) |
-| `relay/` | sorgenti delle pagine pubbliche: ritorno dalla banca, modelli di privacy e termini (`relay/app/`), `assetlinks.json` (`relay/user-site/`) |
 | `assets/icon.png` | logo mostrato nella schermata di sblocco |
 | `docs/` | documentazione |
 
@@ -71,7 +70,7 @@ Prima di aggiornare Flutter, togli questi vincoli e rilancia tutti i test.
 
 - Xiaomi con HyperOS 2: confermare "Installa" sul telefono a ogni installazione via adb.
   "Spazio insufficiente" compare come `INSTALL_FAILED_USER_RESTRICTED`; se la conferma scade, installa
-  copiando l'APK in *Download* (vedi [Installazione](installazione.md#5-installazione-sul-telefono)).
+  copiando l'APK in *Download* (vedi [Installazione](installazione.md#4-installazione-sul-telefono)).
 
 ## Convenzioni
 
