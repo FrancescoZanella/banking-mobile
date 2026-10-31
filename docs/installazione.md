@@ -93,12 +93,18 @@ disinstallata; i dati sul telefono si perdono.
 
 ## 5. Pubblicare una Release
 
-Per chi installa senza compilare. Con la [GitHub CLI](https://cli.github.com):
+Per chi installa senza compilare.
+
+1. **Alza la versione** in `pubspec.yaml`, riga `version: <nome>+<numero>` (per esempio da
+   `1.1.0+2` a `1.2.0+3`): il numero dopo il `+` deve crescere a ogni Release, altrimenti Android può
+   non riconoscere l'APK come aggiornamento.
+2. Lancia i test e fai la build di release (punto 3).
+3. Committa, poi pubblica con la [GitHub CLI](https://cli.github.com), usando lo stesso nome di versione:
 
 ```bash
-git tag v1.0.0
-git push origin v1.0.0
-gh release create v1.0.0 build/app/outputs/flutter-apk/app-release.apk --title "v1.0.0" --notes "Novità: …"
+git tag v1.2.0
+git push origin v1.2.0
+gh release create v1.2.0 build/app/outputs/flutter-apk/app-release.apk --title "v1.2.0" --notes "Novità: …"
 ```
 
 - Pubblica solo APK firmati con la chiave di release e con tutti i test verdi.

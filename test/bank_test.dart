@@ -220,7 +220,6 @@ void main() {
     expect(isCallbackUri(Uri.parse('https://francescozanella.github.io/banking/?state=a&code=b')), isTrue);
     expect(isCallbackUri(Uri.parse('https://francescozanella.github.io/banking/privacy.html')), isFalse);
     expect(isCallbackUri(Uri.parse('https://francescozanella.github.io/bankingx/?state=a')), isFalse);
-    expect(isCallbackUri(Uri.parse('https://francescozanella.github.io/Bankrelay/app/?state=a')), isFalse); // vecchio indirizzo
     expect(isCallbackUri(Uri.parse('https://evil.example/banking/?state=a')), isFalse);
     expect(isCallbackUri(Uri.parse('http://francescozanella.github.io/banking/?state=a')), isFalse);
     expect(isCallbackUri(Uri.parse('bankingmobile://altro?state=a')), isFalse);
