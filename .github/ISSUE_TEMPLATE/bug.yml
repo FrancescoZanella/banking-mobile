@@ -1,0 +1,57 @@
+name: Problema (bug)
+description: Qualcosa non funziona come dovrebbe.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **Una falla di sicurezza non va segnalata qui:** usa la segnalazione privata (vedi SECURITY.md).
+  - type: textarea
+    id: descrizione
+    attributes:
+      label: Cosa succede
+      description: Descrivi il problema.
+    validations:
+      required: true
+  - type: textarea
+    id: passi
+    attributes:
+      label: Passi per riprodurlo
+      placeholder: |
+        1. Apri …
+        2. Tocca …
+        3. Vedi …
+    validations:
+      required: true
+  - type: textarea
+    id: atteso
+    attributes:
+      label: Cosa ti aspettavi
+    validations:
+      required: true
+  - type: input
+    id: versione
+    attributes:
+      label: Versione dell'app
+      placeholder: es. 1.1.0
+    validations:
+      required: true
+  - type: input
+    id: telefono
+    attributes:
+      label: Telefono e versione di Android
+      placeholder: es. Xiaomi 14, HyperOS 2 (Android 15)
+    validations:
+      required: true
+  - type: textarea
+    id: altro
+    attributes:
+      label: Altre informazioni
+      description: Messaggi di errore, voce dello «Storico sync», banca coinvolta.
+  - type: checkboxes
+    id: dati
+    attributes:
+      label: Dati personali
+      options:
+        - label: Ho tolto da testo e immagini importi, IBAN, nomi, APP_ID e chiavi.
+          required: true

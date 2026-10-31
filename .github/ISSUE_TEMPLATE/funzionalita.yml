@@ -1,0 +1,44 @@
+name: Nuova funzionalità
+description: Proponi una funzione nuova o un miglioramento.
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Descrivi **cosa** deve fare l'app, non per forza **come** farlo: il come lo sceglie chi implementa.
+        Non incollare dati veri (importi, IBAN, nomi, APP_ID, chiavi).
+  - type: textarea
+    id: problema
+    attributes:
+      label: Problema
+      description: Cosa manca o cosa non va oggi, visto da chi usa l'app.
+    validations:
+      required: true
+  - type: textarea
+    id: atteso
+    attributes:
+      label: Comportamento atteso
+      description: Cosa deve succedere dopo la modifica.
+    validations:
+      required: true
+  - type: textarea
+    id: vincoli
+    attributes:
+      label: Vincoli
+      description: Cose da rispettare o da non fare (sicurezza, servizi esterni, compatibilità…).
+  - type: textarea
+    id: accettazione
+    attributes:
+      label: Criteri di accettazione
+      description: I casi da verificare con il risultato atteso, meglio se come test automatici.
+      placeholder: |
+        | Caso | Risultato atteso |
+        |---|---|
+        | … | … |
+    validations:
+      required: true
+  - type: textarea
+    id: suggerimenti
+    attributes:
+      label: Suggerimenti per chi implementa (facoltativi)
+      description: Dove sta il codice da toccare, idee di soluzione.

@@ -1,0 +1,85 @@
+# Controlli automatici: a ogni push e a ogni pull request, anche da un fork.
+# Una PR si unisce solo con tutti i controlli verdi (regola del branch master).
+name: Controlli
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Un nuovo push sulla stessa PR o sullo stesso branch annulla i controlli ancora in corso.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+env:
+  # Versione fissata: vedi docs/sviluppo.md, «Versioni fissate».
+  FLUTTER_VERSION: 3.32.4
+
+jobs:
+  test:
+    name: Analisi e test
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      # I test usano SQLite in memoria tramite sqflite_common_ffi.
+      - name: SQLite per i test
+        run: sudo apt-get update && sudo apt-get install -y libsqlite3-dev
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+      - run: flutter pub get
+      - run: flutter analyze
+      - run: flutter test --timeout 60s
+
+  segreti:
+    name: Nessun segreto nella repo
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      # Gli stessi controlli di docs/sviluppo.md, «Cosa non va mai su GitHub».
+      - name: File vietati nella cronologia
+        run: |
+          found=$(git log --all --name-only --pretty=format: | sort -u \
+            | grep -iE '\.pem$|\.jks$|\.keystore$|key\.properties|\.env$|\.db$' || true)
+          if [ -n "$found" ]; then
+            echo "::error::Questi file non devono stare su GitHub:"
+            echo "$found"
+            exit 1
+          fi
+      - name: Chiavi private nel codice
+        run: |
+          if git grep -nE 'BEGIN [A-Z ]*PRIVATE KEY' -- ':!test' ':!docs'; then
+            echo "::error::Trovata una chiave privata nel codice."
+            exit 1
+          fi
+
+  android:
+    name: Build Android (debug)
+    needs: test
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+      - run: flutter pub get
+      # La release richiede la chiave di firma, che non è (e non deve essere) qui.
+      - run: flutter build apk --debug

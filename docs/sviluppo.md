@@ -10,6 +10,7 @@
 | `android/` | progetto Android: manifest, risorse, `MainActivity.kt`, firma e R8 (`app/build.gradle.kts`, `app/proguard-rules.pro`) |
 | `assets/icon.png` | logo mostrato nella schermata di sblocco |
 | `docs/` | documentazione |
+| `.github/` | controlli automatici (`workflows/ci.yml`), modelli di issue e pull request |
 
 Non sono nella repo (sono in `.gitignore` o generati): `build/`, `.dart_tool/`, file dell'IDE,
 `local.properties`.
@@ -23,7 +24,7 @@ Non sono nella repo (sono in `.gitignore` o generati): `build/`, `.dart_tool/`, 
 - Nei test solo dati inventati (IBAN come `IT11`, `IT02`; chiave `.pem` finta con il solo testo
   `CHIAVE-DI-PROVA-NON-VALIDA`).
 
-Controllo prima di un push (nessuna riga deve uscire):
+Controllo prima di un push (nessuna riga deve uscire; su GitHub gli stessi controlli bloccano la PR):
 
 ```
 git log --all --name-only --pretty=format: | sort -u | grep -iE "\.pem$|\.jks$|\.keystore$|key\.properties|\.env$|\.db$"
@@ -37,6 +38,10 @@ flutter analyze
 flutter test --timeout 60s
 flutter test integration_test -d <id-telefono>
 ```
+
+I primi due girano anche su GitHub a ogni push e a ogni pull request (`.github/workflows/ci.yml`),
+insieme alla build `flutter build apk --debug` e ai controlli di «Cosa non va mai su GitHub». Il test
+sul telefono no: va lanciato a mano.
 
 `--timeout 60s` fa fallire subito un test bloccato invece di aspettare 10 minuti. Nei widget test non
 aspettare con `tester.runAsync` una sincronizzazione avviata dall'app: resterebbe bloccata (usa
