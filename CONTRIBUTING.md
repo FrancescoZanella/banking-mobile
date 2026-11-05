@@ -32,12 +32,8 @@ Grazie dell'interesse. Qui trovi come proporre una modifica e cosa serve perché
 5. Se cambia il comportamento dell'app, **aggiorna la documentazione** (`README.md` e `docs/`).
 6. Apri la **pull request** verso `master`, compila il modello e scrivi `Closes #<numero>` per collegare
    l'issue.
-7. I **controlli automatici** (GitHub Actions) partono da soli e devono essere tutti verdi:
-   - analisi e test;
-   - build Android (debug);
-   - nessun segreto nella repo.
-
-   Poi il maintainer rivede la PR e decide se unirla.
+7. Nella PR riporta l'esito dei controlli del punto 3. Poi il maintainer rivede la PR e decide se
+   unirla.
 
 ## Regole del codice
 
@@ -58,7 +54,8 @@ Sono riassunte qui; l'elenco completo è in [Sviluppo](docs/sviluppo.md#convenzi
 - Mai su GitHub: chiavi `.pem`, chiavi di firma, `key.properties`, database, CSV esportati, screenshot
   con importi.
 - Nei test usa **solo dati inventati**: IBAN come `IT11`, la chiave finta `CHIAVE-DI-PROVA-NON-VALIDA`.
-- Uno dei controlli automatici blocca la PR se trova file di chiavi o chiavi private nel codice.
+- Prima di un push lancia i controlli di [Sviluppo](docs/sviluppo.md#cosa-non-va-mai-su-github): non devono
+  trovare file di chiavi né chiavi private nel codice.
 
 ## Licenza
 

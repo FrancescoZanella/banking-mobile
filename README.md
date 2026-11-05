@@ -277,7 +277,7 @@ test/              test di logica e delle schermate
 integration_test/  test sul telefono (cifratura del database)
 android/           progetto Android: manifest, icone, codice nativo (MainActivity.kt), firma
 docs/              documentazione
-.github/           controlli automatici (GitHub Actions), modelli di issue e pull request
+.github/           modelli di issue e pull request
 ```
 
 Mai su GitHub: `.pem`, chiavi di firma, `key.properties`, database, CSV esportati. Vedi
@@ -290,8 +290,8 @@ Mai su GitHub: `.pem`, chiavi di firma, `key.properties`, database, CSV esportat
 Le proposte sono benvenute: le funzioni da fare sono nelle [issue](https://github.com/FrancescoZanella/banking-mobile/issues)
 con l'etichetta `help wanted`. Come proporre una modifica è spiegato in [CONTRIBUTING.md](CONTRIBUTING.md).
 
-A ogni pull request partono da soli tre controlli (GitHub Actions): **analisi e test**, **build Android**
-e **nessun segreto nella repo**. Una PR si unisce solo se sono tutti verdi.
+Prima di aprire una pull request, chi contribuisce lancia in locale analisi e test e riporta l'esito
+nella PR.
 
 Le **vulnerabilità** non vanno nelle issue: si segnalano in privato, vedi [SECURITY.md](SECURITY.md).
 
